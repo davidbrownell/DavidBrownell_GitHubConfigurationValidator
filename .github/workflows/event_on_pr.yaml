@@ -1,0 +1,42 @@
+# ----------------------------------------------------------------------
+# |
+# |  event_on_pr.yaml
+# |
+# |  David Brownell <db@DavidBrownell.com>
+# |      2023-11-03 08:31:41
+# |
+# ----------------------------------------------------------------------
+# |
+# |  Copyright David Brownell 2023
+# |  Distributed under the Boost Software License, Version 1.0. See
+# |  accompanying file LICENSE_1_0.txt or copy at
+# |  http://www.boost.org/LICENSE_1_0.txt.
+# |
+# ----------------------------------------------------------------------
+name: "on pull request"
+run-name: "${{ github.run_number }} [${{ github.actor }}] ${{ github.head_ref }} -> ${{ github.base_ref }}"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  _8ea281cc-b869-4078-bda0-f6cada2a57df:
+    name: "Validate (target: ${{ github.base_ref }})"
+    uses: davidbrownell/DavidBrownell_GitHubConfigurationValidator/.github/workflows/validate.yaml@CI-v1
+    with:
+      repo_branch: "${{ github.head_ref }}"
+
+  _f69eb16e-940a-41fb-ae7a-32e2425bdfb8:
+    name: "Validate Pull Request (target: ${{ github.base_ref }})"
+    uses: davidbrownell/v4-Common_Foundation/.github/workflows/callable_validate_pull_request.yaml@CI-v1
+    with:
+      job_name_prefix: "DavidBrownell_GitHubConfigurationValidator"
+      is_mixin_repository: False
+      repo_name: davidbrownell/DavidBrownell_GitHubConfigurationValidator
+      repo_branch: "${{ github.head_ref }}"
+
+      os: ubuntu-latest
+
+      configuration: dev

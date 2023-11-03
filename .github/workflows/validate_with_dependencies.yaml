@@ -1,0 +1,29 @@
+# ----------------------------------------------------------------------
+# |
+# |  validate_with_dependencies.yaml
+# |
+# |  David Brownell <db@DavidBrownell.com>
+# |      2023-11-03 08:32:58
+# |
+# ----------------------------------------------------------------------
+# |
+# |  Copyright David Brownell 2023
+# |  Distributed under the Boost Software License, Version 1.0. See
+# |  accompanying file LICENSE_1_0.txt or copy at
+# |  http://www.boost.org/LICENSE_1_0.txt.
+# |
+# ----------------------------------------------------------------------
+name: "[callable] Validates DavidBrownell_GitHubConfigurationValidator (and its dependencies)"
+
+on:
+  workflow_call:
+    inputs:
+      repo_branch:                          {type: string, required: true}
+
+jobs:
+  _8f219c22-365c-420a-b624-52732e10a76e:
+    name: "DavidBrownell_GitHubConfigurationValidator"
+    uses: davidbrownell/DavidBrownell_GitHubConfigurationValidator/.github/workflows/validate.yaml@CI-v1
+    with:
+      repo_branch: "${{ inputs.repo_branch }}"
+      bootstrap_branch_overrides: "DavidBrownell_GitHubConfigurationValidator:${{ inputs.repo_branch }}"
