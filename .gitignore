@@ -13,7 +13,7 @@ Setup[.-]*.cmd
 Setup[.-]*.sh
 
 # ----------------------------------------------------------------------
-Generated/**
+**/Generated/**
 
 .pytest_cache/**
 __pycache__/**
@@ -27,3 +27,8 @@ coverage.xml
 test_localsystem.txt
 
 # ----------------------------------------------------------------------
+.github/**/*Compiler.ConditionalInvocationQueryMixin.data
+.pylintrc
+Scripts/GitHubConfigurationValidator.py
+
+src/GitHubConfigurationValidator/src/ConfigurationSchema/GeneratedCode/*.ConditionalInvocationQueryMixin.data
