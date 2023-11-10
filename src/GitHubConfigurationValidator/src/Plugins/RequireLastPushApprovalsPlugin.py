@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  RequireLastPushApprovalsPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 15:04:29
 # |
 # ----------------------------------------------------------------------
 # |
@@ -15,18 +15,31 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from typing import Any
+
 from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
+def _GetValue(
+    configuration: dict[str, Any],
+) -> PluginBase.ValidateResultType | bool:
+    settings = configuration.get("required_pull_request_reviews", None)
+    if settings is None:
+        return None
+
+    return settings["require_last_push_approval"]
+
+
+# ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
+    "RequireLastPushApprovals",
+    PluginBase.ConfigurationType.BranchProtection,
     True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "--no-require-last-push-approvals",
+    "settings/branches",
+    "Protect matching branches",
+    "Require approval of the most recent reviewable push",
+    _GetValue,
 )

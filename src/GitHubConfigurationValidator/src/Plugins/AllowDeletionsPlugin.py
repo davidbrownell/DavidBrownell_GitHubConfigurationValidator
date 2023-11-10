@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  AllowDeletionsPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 15:58:53
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "AllowDeletions",
+    PluginBase.ConfigurationType.BranchProtection,
+    False,
+    "--allow-deletions",
+    "settings/branches",
+    "Rules applied to everyone including administrators",
+    "Allow deletions",
+    lambda configuration: configuration["allow_deletions"]["enabled"],
 )

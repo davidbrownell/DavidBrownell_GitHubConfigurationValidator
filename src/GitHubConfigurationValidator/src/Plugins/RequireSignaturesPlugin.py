@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  RequireSignaturesPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 15:45:19
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
+    "RequireSignatures",
+    PluginBase.ConfigurationType.BranchProtection,
     True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "--no-require-signatures",
+    "settings/branches",
+    "Protect matching branches",
+    "Require signed commits",
+    lambda configuration: configuration["required_signatures"]["enabled"],
 )

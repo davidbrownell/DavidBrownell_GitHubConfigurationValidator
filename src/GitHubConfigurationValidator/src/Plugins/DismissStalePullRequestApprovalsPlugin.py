@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  DismissStalePullRequestApprovalsPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 14:49:10
 # |
 # ----------------------------------------------------------------------
 # |
@@ -15,18 +15,31 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from typing import Any
+
 from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
+def _GetValue(
+    configuration: dict[str, Any],
+) -> PluginBase.ValidateResultType:
+    settings = configuration.get("required_pull_request_reviews", None)
+    if settings is None:
+        return None
+
+    return settings["dismiss_stale_reviews"]
+
+
+# ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
+    "DismissStalePullRequestApprovals",
+    PluginBase.ConfigurationType.BranchProtection,
     True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "--no-dismiss-stale-pull-request-approvals",
+    "settings/branches",
+    "Protect matching branches",
+    "Dismiss stale pull request approvals when new commits are pushed",
+    _GetValue,
 )

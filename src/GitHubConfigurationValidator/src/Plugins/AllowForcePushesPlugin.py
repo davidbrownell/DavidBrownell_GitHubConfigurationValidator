@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  AllowForcePushesPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 15:56:59
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "AllowForcePushes",
+    PluginBase.ConfigurationType.BranchProtection,
+    False,
+    "--allow-force-pushes",
+    "settings/branches",
+    "Rules applied to everyone including administrators",
+    "Allow force pushes",
+    lambda configuration: configuration["allow_force_pushes"]["enabled"],
 )

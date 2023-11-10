@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "DeleteHeadBranches",
     PluginBase.ConfigurationType.Repository,
-    "delete_head_branches",
     True,
     "--no-delete-head-branches",
     "settings",

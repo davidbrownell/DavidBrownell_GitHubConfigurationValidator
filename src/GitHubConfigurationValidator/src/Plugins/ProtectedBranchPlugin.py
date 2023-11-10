@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  RebaseMergePlugin.py
+# |  ProtectedBranchPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:57:47
+# |      2023-11-10 14:08:05
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,13 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "RebaseMerge",
-    PluginBase.ConfigurationType.Repository,
-    "rebase_merge",
-    False,
-    "--rebase-merge",
-    "settings",
-    "Pull Requests",
-    "Allow rebase merging",
-    lambda configuration: configuration["allow_rebase_merge"],
+    "ProtectedBranch",
+    PluginBase.ConfigurationType.Branch,
+    True,
+    "--no-protected-branch",
+    "settings/branches",
+    "Branch protection rules",
+    "protected",
+    lambda configuration: configuration["protected"],
 )

@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "WebCommitSignoff",
     PluginBase.ConfigurationType.Repository,
-    "web_commit_signoff",
     True,
     "--no-web-commit-signoff",
     "settings",

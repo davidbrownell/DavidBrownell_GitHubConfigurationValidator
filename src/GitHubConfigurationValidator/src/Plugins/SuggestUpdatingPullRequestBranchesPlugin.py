@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "SuggestUpdatingPullRequestBranches",
     PluginBase.ConfigurationType.Repository,
-    "suggest_updating_pull_request_branches",
     True,
     "--no-suggest-updating-pull-request-branches",
     "settings",

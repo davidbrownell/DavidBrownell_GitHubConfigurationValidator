@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  RequireStatusChecksToPassPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 15:24:25
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
+    "RequireStatusChecksToPass",
+    PluginBase.ConfigurationType.BranchProtection,
     True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "--no-require-status-checks-to-pass",
+    "settings/branches",
+    "Protect matching branches",
+    "Require status checks to pass before merging",
+    lambda configuration: configuration.get("required_status_checks", None) is not None,
 )

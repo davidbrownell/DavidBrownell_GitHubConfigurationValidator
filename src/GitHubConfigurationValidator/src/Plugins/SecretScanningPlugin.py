@@ -22,7 +22,7 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
-def _Validate(
+def _GetValue(
     configuration: dict[str, Any],
 ) -> PluginBase.ValidateResultType | bool:
     security_and_analysis = configuration.get("security_and_analysis", None)
@@ -39,11 +39,10 @@ def _Validate(
 Plugin = CreateEnablePlugin(
     "SecretScanning",
     PluginBase.ConfigurationType.Repository,
-    "secret_scanning",
     True,
     "--no-secret-scanning",
     "settings/security_analysis",
     "Secret scanning",
     "Secret scanning",
-    _Validate,
+    _GetValue,
 )

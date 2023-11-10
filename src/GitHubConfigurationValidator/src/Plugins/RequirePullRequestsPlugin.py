@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  RequirePullRequestsPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 14:21:32
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
-    PluginBase.ConfigurationType.Repository,
+    "RequirePullRequests",
+    PluginBase.ConfigurationType.BranchProtection,
     True,
-    "--no-merge-commit",
-    "settings",
-    "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "--no-require-pull-requests",
+    "settings/branches",
+    "Protect matching branches",
+    "Require a pull request before merging",
+    lambda configuration: "required_pull_request_reviews" in configuration,
 )

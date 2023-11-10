@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  RebaseMergeCommitPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-09 11:57:47
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
+    "RebaseMergeCommit",
     PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
+    False,
+    "--rebase-merge-commit",
     "settings",
     "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "Allow rebase merging",
+    lambda configuration: configuration["allow_rebase_merge"],
 )
