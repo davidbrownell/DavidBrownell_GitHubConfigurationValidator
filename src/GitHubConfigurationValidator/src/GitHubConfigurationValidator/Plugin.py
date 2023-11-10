@@ -40,6 +40,7 @@ class Plugin(ABC):
 
         Repository                          = auto()
         Branch                              = auto()
+        BranchProtection                    = auto()
 
     # ----------------------------------------------------------------------
     class MessageType(Enum):

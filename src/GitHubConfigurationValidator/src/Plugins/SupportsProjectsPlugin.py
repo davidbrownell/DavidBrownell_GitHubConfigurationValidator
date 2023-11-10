@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "SupportsProjects",
     PluginBase.ConfigurationType.Repository,
-    "support_projects",
     True,
     "--no-supports-projects",
     "settings",

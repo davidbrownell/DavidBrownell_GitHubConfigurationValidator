@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  SquashMergePlugin.py
+# |  RequireUpToDateBranchesPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:52:25
+# |      2023-11-10 15:34:52
 # |
 # ----------------------------------------------------------------------
 # |
@@ -15,19 +15,31 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from typing import Any
+
 from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
+def _GetValue(
+    configuration: dict[str, Any],
+) -> PluginBase.ValidateResultType | bool:
+    settings = configuration.get("required_status_checks", None)
+    if settings is None:
+        return None
+
+    return settings["strict"]
+
+
+# ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "SquashMerge",
-    PluginBase.ConfigurationType.Repository,
-    "squash_merge",
-    False,
-    "--squash-merge",
-    "settings",
-    "Pull Requests",
-    "Allow squash merging",
-    lambda configuration: configuration["allow_squash_merge"],
+    "RequireUpToDateBranches",
+    PluginBase.ConfigurationType.BranchProtection,
+    True,
+    "--no-require-up-to-date-branches",
+    "settings/branches",
+    "Protect matching branches",
+    "Require status checks to pass before merging -> Require branches to be up to date before merging",
+    _GetValue,
 )

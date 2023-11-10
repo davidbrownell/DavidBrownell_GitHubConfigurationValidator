@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  MergeCommitMessagePlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 12:43:31
 # |
 # ----------------------------------------------------------------------
 # |
@@ -15,18 +15,30 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from typing import Any, Optional
+
 from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
-from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
+from GitHubConfigurationValidator.Impl.PluginImpl import CreateValuePlugin, Result
 
 
 # ----------------------------------------------------------------------
-Plugin = CreateEnablePlugin(
-    "MergeCommit",
+def _GetValue(
+    configuration: dict[str, Any],
+) -> PluginBase.ValidateResultType | Result[Optional[str]]:
+    if not configuration["allow_merge_commit"]:
+        return None
+
+    return Result(configuration["merge_commit_message"])
+
+
+# ----------------------------------------------------------------------
+Plugin = CreateValuePlugin(
+    "MergeCommitMessage",
     PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
+    "PR_BODY",
+    "--merge-commit-message",
     "settings",
     "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "Allow merge commits -> Default...",
+    _GetValue,
 )

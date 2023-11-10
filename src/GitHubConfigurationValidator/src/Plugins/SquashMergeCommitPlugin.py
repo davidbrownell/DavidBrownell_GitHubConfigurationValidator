@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  SquashMergeCommitPlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-09 11:52:25
 # |
 # ----------------------------------------------------------------------
 # |
@@ -21,12 +21,12 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 # ----------------------------------------------------------------------
 Plugin = CreateEnablePlugin(
-    "MergeCommit",
+    "SquashCommitMerge",
     PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
+    False,
+    "--squash-merge-commit",
     "settings",
     "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "Allow squash merging",
+    lambda configuration: configuration["allow_squash_merge"],
 )

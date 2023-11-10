@@ -332,7 +332,7 @@ def ValidateRepos(
 
                 with DoneManager.Create(
                     sink,
-                    "Checking '{}'...".format(repository),
+                    "",
                 ) as this_dm:
                     _ValidateRepo(
                         this_dm,
@@ -392,8 +392,6 @@ class _CustomSession(requests.Session):
         if github_url.endswith("/"):
             github_url = github_url[:-1]
 
-        self._github_url                    = github_url
-
         self.headers["X-GitHub-Api-Version"] = "2022-11-28"
 
         if pat:
@@ -405,7 +403,8 @@ class _CustomSession(requests.Session):
 
             self.headers["Authorization"] = "Bearer {}".format(pat)
 
-        self.is_enterprise                  = self._github_url != _DEFAULT_GITHUB_URL
+        self.github_url                     = github_url
+        self.is_enterprise                  = self.github_url != _DEFAULT_GITHUB_URL
         self.has_pat                        = bool(pat)
 
     # ----------------------------------------------------------------------
@@ -415,7 +414,7 @@ class _CustomSession(requests.Session):
 
         return super(_CustomSession, self).request(
             method,
-            "{}{}".format(self._github_url, url),
+            "{}{}".format(self.github_url, url),
             *args,
             **kwargs,
         )
@@ -569,6 +568,8 @@ def _GetPlugins(
 
             plugins.append(plugin)
 
+        plugins.sort(key=lambda plugin: plugin.name)
+
         return plugins
 
 
@@ -671,88 +672,111 @@ def _ValidateRepo(
     repository: str,
     plugins: list[Plugin],
 ) -> None:
-    grouped_plugins: dict[Plugin.ConfigurationType, list[Plugin]] = {}
+    with dm.Nested("Checking '{}'...".format(repository)) as repo_dm:
+        grouped_plugins: dict[Plugin.ConfigurationType, list[Plugin]] = {}
 
-    for plugin in plugins:
-        grouped_plugins.setdefault(plugin.configuration_type, []).append(plugin)
+        for plugin in plugins:
+            grouped_plugins.setdefault(plugin.configuration_type, []).append(plugin)
 
-    # ----------------------------------------------------------------------
-    def RunPlugins(
-        header: str,
-        url: str,
-        plugins: Optional[list[Plugin]],
-    ) -> None:
-        if plugins is None:
-            return
+        # ----------------------------------------------------------------------
+        def RunPlugins(
+            header: str,
+            url: str,
+            plugins: Optional[list[Plugin]],
+            *,
+            always_run: bool=False,
+        ) -> Optional[dict[str, Any]]:
+            if not always_run and plugins is None:
+                return None
 
-        with dm.Nested(
-            header,
-            suffix="\n",
-        ) as run_dm:
-            response = session.get(url)
+            with repo_dm.Nested(
+                header,
+                suffix="\n",
+            ) as run_dm:
+                response = session.get(url)
 
-            response.raise_for_status()
-            response = response.json()
+                response.raise_for_status()
+                response = response.json()
 
-            with run_dm.Nested("Running {}...".format(inflect.no("plugin", len(plugins)))) as plugin_dm:
-                # ----------------------------------------------------------------------
-                def EnumResults(
-                    results: Plugin.ValidateResultType,
-                ) -> Iterator[tuple[Plugin.MessageType, str]]:
-                    if results is None:
-                        return
+                if plugins:
+                    with run_dm.Nested("Running {}...".format(inflect.no("plugin", len(plugins)))) as plugin_dm:
+                        # ----------------------------------------------------------------------
+                        def EnumResults(
+                            results: Plugin.ValidateResultType,
+                        ) -> Iterator[tuple[Plugin.MessageType, str]]:
+                            if results is None:
+                                return
 
-                    if not isinstance(results, list):
-                        results = [results, ]
+                            if not isinstance(results, list):
+                                results = [results, ]
 
-                    for result in results:
-                        if isinstance(result, str):
-                            message_type = Plugin.MessageType.Error
-                            message = result
-                        else:
-                            message_type, message = result
+                            for result in results:
+                                if isinstance(result, str):
+                                    message_type = Plugin.MessageType.Error
+                                    message = result
+                                else:
+                                    message_type, message = result
 
-                        yield message_type, message
+                                yield message_type, message
 
-                # ----------------------------------------------------------------------
+                        # ----------------------------------------------------------------------
 
-                for plugin in plugins:
-                    try:
-                        results = plugin.Validate(response)
-                    except KeyError:
-                        if session.has_pat:
-                            raise
+                        for plugin in plugins:
+                            try:
+                                results = plugin.Validate(response)
+                            except KeyError as ex:
+                                if session.has_pat:
+                                    raise
 
-                        results = (
-                            Plugin.MessageType.Warning,
-                            "The configuration information used by this plugin was not found. This can generally be resolved by providing a GitHub Personal Access Token (PAT) on the command line.",
-                        )
+                                results = (
+                                    Plugin.MessageType.Warning,
+                                    "Configuration information was not found; this can generally be resolved by providing a GitHub Personal Access Token (PAT) on the command line (Error: {}).".format(ex),
+                                )
 
-                    for message_type, message in EnumResults(results):
-                        message = "[{}] {}".format(plugin.name, message)
+                            for message_type, message in EnumResults(results):
+                                message = "[{}] {}".format(plugin.name, message)
 
-                        if message_type == Plugin.MessageType.Error:
-                            plugin_dm.WriteError(message)
-                        elif message_type == Plugin.MessageType.Warning:
-                            plugin_dm.WriteWarning(message)
-                        elif message_type == Plugin.MessageType.Info:
-                            plugin_dm.WriteInfo(message)
-                        else:
-                            assert False, message_type  # pragma: no cover
+                                if message_type == Plugin.MessageType.Error:
+                                    plugin_dm.WriteError(message)
+                                elif message_type == Plugin.MessageType.Warning:
+                                    plugin_dm.WriteWarning(message)
+                                elif message_type == Plugin.MessageType.Info:
+                                    plugin_dm.WriteInfo(message)
+                                else:
+                                    assert False, message_type  # pragma: no cover
 
-    # ----------------------------------------------------------------------
+                return response
 
-    RunPlugins(
-        "Checking repository...",
-        "repos/{}/{}".format(username, repository),
-        grouped_plugins.get(Plugin.ConfigurationType.Repository),
-    )
+        # ----------------------------------------------------------------------
 
-    RunPlugins(
-        "Checking branches...",
-        "repos/{}/{}/branches/main".format(username, repository),
-        grouped_plugins.get(Plugin.ConfigurationType.Branch),
-    )
+        settings = RunPlugins(
+            "Checking repository settings...",
+            "repos/{}/{}".format(username, repository),
+            grouped_plugins.get(Plugin.ConfigurationType.Repository),
+            always_run=True,
+        )
+
+        assert settings is not None
+
+        default_branch = settings["default_branch"]
+
+        settings = RunPlugins(
+            "Checking branch settings...",
+            "repos/{}/{}/branches/{}".format(username, repository, default_branch),
+            grouped_plugins.get(Plugin.ConfigurationType.Branch),
+        )
+
+        if settings and settings["protected"]:
+            protection_url = settings["protection_url"]
+
+            assert protection_url.startswith(session.github_url), protection_url
+            protection_url = protection_url[len(session.github_url):]
+
+            settings = RunPlugins(
+                "Checking branch protection settings...",
+                protection_url,
+                grouped_plugins.get(Plugin.ConfigurationType.BranchProtection),
+            )
 
 
 # ----------------------------------------------------------------------

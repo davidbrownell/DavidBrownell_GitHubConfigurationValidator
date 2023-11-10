@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------
 # |
-# |  MergeCommitPlugin.py
+# |  SquashMergeCommitMessagePlugin.py
 # |
 # |  David Brownell <db@DavidBrownell.com>
-# |      2023-11-09 11:54:50
+# |      2023-11-10 13:03:03
 # |
 # ----------------------------------------------------------------------
 # |
@@ -15,18 +15,30 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from typing import Any, Optional
+
 from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
-from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
+from GitHubConfigurationValidator.Impl.PluginImpl import CreateValuePlugin, Result
 
 
 # ----------------------------------------------------------------------
-Plugin = CreateEnablePlugin(
-    "MergeCommit",
+def _GetValue(
+    configuration: dict[str, Any],
+) -> PluginBase.ValidateResultType | Result[Optional[str]]:
+    if not configuration["allow_squash_merge"]:
+        return None
+
+    return Result(configuration["squash_merge_commit_message"])
+
+
+# ----------------------------------------------------------------------
+Plugin = CreateValuePlugin(
+    "SquashMergeCommitMessage",
     PluginBase.ConfigurationType.Repository,
-    True,
-    "--no-merge-commit",
+    "PR_BODY",
+    "--squash-merge-commit-message",
     "settings",
     "Pull Requests",
-    "Allow merge commits",
-    lambda configuration: configuration["allow_merge_commit"],
+    "Allow squash merging -> Default...",
+    _GetValue,
 )

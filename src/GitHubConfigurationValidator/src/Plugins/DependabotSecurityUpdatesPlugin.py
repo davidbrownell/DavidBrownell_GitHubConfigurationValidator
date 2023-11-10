@@ -22,7 +22,7 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
-def _Validate(
+def _GetValue(
     configuration: dict[str, Any],
 ) -> PluginBase.ValidateResultType | bool:
     security_and_analysis = configuration.get("security_and_analysis", None)
@@ -39,11 +39,10 @@ def _Validate(
 Plugin = CreateEnablePlugin(
     "DependabotSecurityUpdates",
     PluginBase.ConfigurationType.Repository,
-    "dependabot_security_updates",
     True,
     "--no-dependabot-security-updates",
     "settings/security_analysis",
     "Dependabot",
     "Dependabot security updates",
-    _Validate,
+    _GetValue,
 )

@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "AutoMerge",
     PluginBase.ConfigurationType.Repository,
-    "auto_merge",
     True,
     "--no-auto-merge",
     "settings",

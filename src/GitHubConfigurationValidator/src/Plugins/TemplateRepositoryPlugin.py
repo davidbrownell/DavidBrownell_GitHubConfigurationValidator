@@ -23,7 +23,6 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "TemplateRepository",
     PluginBase.ConfigurationType.Repository,
-    "template_repository",
     False,
     "--template-repository",
     "settings",

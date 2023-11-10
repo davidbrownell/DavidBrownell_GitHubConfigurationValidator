@@ -23,9 +23,8 @@ from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "SupportsDiscussions",
     PluginBase.ConfigurationType.Repository,
-    "support_discussions",
-    True,
-    "--no-supports-discussions",
+    False,
+    "--supports-discussions",
     "settings",
     "Features",
     "Discussions",
