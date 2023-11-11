@@ -181,6 +181,6 @@ jobs:
 
       - name: Run Test
         run: |
-          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidator/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
+          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidatorLib/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
 
 <<% endfor %>>

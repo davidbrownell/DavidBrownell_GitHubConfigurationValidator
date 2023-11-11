@@ -17,8 +17,8 @@
 
 from typing import Any
 
-from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
-from GitHubConfigurationValidator.Impl.PluginImpl import CreateEnablePlugin
+from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
+from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateEnablePlugin
 
 
 # ----------------------------------------------------------------------
