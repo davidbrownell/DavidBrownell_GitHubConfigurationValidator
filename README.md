@@ -4,7 +4,7 @@ Command line tool that validates configuration settings for one or more GitHub r
 
 ## Features
 
-- Configuration verification handled through a [plugin architecture](https://github.com/davidbrownell/DavidBrownell_GitHubConfigurationValidator/blob/main/src/GitHubConfigurationValidator/src/GitHubConfigurationValidator/Plugin.py)
+- Configuration verification handled through a [plugin architecture](https://github.com/davidbrownell/DavidBrownell_GitHubConfigurationValidator/blob/main/src/GitHubConfigurationValidator/src/GitHubConfigurationValidatorLib/Plugin.py)
     - A number of plugins are available [out-of-the box](https://github.com/davidbrownell/DavidBrownell_GitHubConfigurationValidator/tree/main/src/GitHubConfigurationValidator/src/Plugins)
     - Custom plugins can be written and included via the `--plugin-dir` command line argument.
 - Works with GitHub users (https://github.com) and GitHub organizations (via the `--github-url` command line argument).
@@ -21,11 +21,11 @@ There are a number of different ways to use this tool:
 
 #### Without a GitHub Personal Access Token (PAT)
 
-1) `docker run -it --rm davidbrownell/github_configuration_validator:latest <arguments here>`
+1) `docker run -it --rm dbrownell/github_configuration_validator:latest <arguments here>`
 
 #### With a GitHub Personal Access Token (PAT) stored within a file on the host
 
-1) `docker run -it --rm -v "<directory containing PAT file>:/local" davidbrownell/github_configuration_validator:latest <arguments here> --pat /local/<name of PAT file>`
+1) `docker run -it --rm -v "<directory containing PAT file>:/local" dbrownell/github_configuration_validator:latest <arguments here> --pat /local/<name of PAT file>`
 
 ### B) Binary
 
