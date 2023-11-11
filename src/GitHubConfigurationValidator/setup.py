@@ -13,14 +13,14 @@
 # |  http://www.boost.org/LICENSE_1_0.txt.
 # |
 # ----------------------------------------------------------------------
-"""Setup for GitHubConfigurationValodator"""
+"""Setup for GitHubConfigurationValidator"""
 
 import datetime
+import os
 import sys
 import textwrap
 
 from pathlib import Path
-from typing import Tuple
 
 from cx_Freeze import setup, Executable
 
@@ -74,11 +74,11 @@ else:
 
 
 # ----------------------------------------------------------------------
-include_files: list[Tuple[str, str]] = []
+include_files: list[tuple[str, str]] = []
 
 for child in Path("src/Plugins").iterdir():
     if (
-        not child.is_file
+        not child.is_file()
         or child.suffix != ".py"
         or child.stem == "__init__"
     ):
@@ -90,6 +90,22 @@ for child in Path("src/Plugins").iterdir():
             str(Path(*child.parts[1:])),
         ),
     )
+
+for root_str, directories, filenames in os.walk(Path("src/GitHubConfigurationValidatorLib")):
+    root = Path(root_str)
+
+    if root.parts[-1] == "TestFiles":
+        continue
+
+    for filename in filenames:
+        fullpath = root / filename
+
+        include_files.append(
+            (
+                str(fullpath),
+                str(Path(*fullpath.parts[1:])),
+            ),
+        )
 
 
 # ----------------------------------------------------------------------

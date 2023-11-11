@@ -15,8 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
-from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
-from GitHubConfigurationValidator.Impl.PluginImpl import CreateValuePlugin, Result
+from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
+from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateValuePlugin, Result
 
 
 # ----------------------------------------------------------------------

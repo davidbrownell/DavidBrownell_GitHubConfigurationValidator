@@ -25,7 +25,7 @@ import typer
 
 from Common_Foundation.Types import overridemethod
 
-from GitHubConfigurationValidator.Plugin import Plugin as PluginBase
+from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 
 
 # ----------------------------------------------------------------------
@@ -107,7 +107,7 @@ def CreateEnablePlugin(
                     """\
                     1) Visit `{{repository}}/{github_settings_url_suffix}`
                     2) Locate the `{github_settings_section}` section
-                    3) Ensure that `{github_settings_value}` is {checked_desc}
+                    3) Ensure that {github_settings_value} is {checked_desc}
                     """,
                 ).format(
                     github_settings_url_suffix=github_settings_url_suffix,
