@@ -93,7 +93,7 @@ jobs:
   # |  macos-latest
   # |
   # ----------------------------------------------------------------------
-  _d8227034-f1e8-4a1f-98e7-6e4b5ee90462:
+  _45b9b37f-768a-462d-a6eb-015c72ce1422:
     name: "Build and Test: dev"
     uses: davidbrownell/v4-Common_PythonDevelopment/.github/workflows/callable_validate.yaml@CI-v1
     with:
@@ -130,11 +130,11 @@ jobs:
       execute_PerformanceTests: 0
 
   # ----------------------------------------------------------------------
-  _93f9c487-fb0f-4484-a234-b7ae3cd82152:
+  _15523f60-6648-47a7-85a3-83009244f3e7:
     name: "DavidBrownell_GitHubConfigurationValidator (macos-latest, dev binaries)"
     runs-on: macos-latest
     needs:
-      - _d8227034-f1e8-4a1f-98e7-6e4b5ee90462
+      - _45b9b37f-768a-462d-a6eb-015c72ce1422
 
     steps:
       - name: "[Impl] Dump Contexts"
@@ -189,14 +189,14 @@ jobs:
 
       - name: Run Test
         run: |
-          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidator/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
+          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidatorLib/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
 
   # ----------------------------------------------------------------------
   # |
   # |  ubuntu-latest
   # |
   # ----------------------------------------------------------------------
-  _0791e53a-1ee8-4692-a396-ff34bb700d15:
+  _9ad31a49-ca4c-4362-b074-e647c3b00d3f:
     name: "Build and Test: dev"
     uses: davidbrownell/v4-Common_PythonDevelopment/.github/workflows/callable_validate.yaml@CI-v1
     with:
@@ -233,11 +233,11 @@ jobs:
       execute_PerformanceTests: 0
 
   # ----------------------------------------------------------------------
-  _8935f20a-19ee-4ef2-b305-1f11460feec9:
+  _65d26671-b5a3-4b6c-901b-fcaa46b33f29:
     name: "DavidBrownell_GitHubConfigurationValidator (ubuntu-latest, dev binaries)"
     runs-on: ubuntu-latest
     needs:
-      - _0791e53a-1ee8-4692-a396-ff34bb700d15
+      - _9ad31a49-ca4c-4362-b074-e647c3b00d3f
 
     steps:
       - name: "[Impl] Dump Contexts"
@@ -292,14 +292,14 @@ jobs:
 
       - name: Run Test
         run: |
-          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidator/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
+          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidatorLib/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
 
   # ----------------------------------------------------------------------
   # |
   # |  windows-latest
   # |
   # ----------------------------------------------------------------------
-  _ac9e3b85-67f5-45e5-b3a0-970027c57065:
+  _9fe7e8d9-35e3-4c81-87dd-88b97dab1ce8:
     name: "Build and Test: dev"
     uses: davidbrownell/v4-Common_PythonDevelopment/.github/workflows/callable_validate.yaml@CI-v1
     with:
@@ -336,11 +336,11 @@ jobs:
       execute_PerformanceTests: 0
 
   # ----------------------------------------------------------------------
-  _8ee4c4d1-10f1-4641-9362-4ef08f655204:
+  _bb91f7f9-a444-4133-bef2-95859d384f1c:
     name: "DavidBrownell_GitHubConfigurationValidator (windows-latest, dev binaries)"
     runs-on: windows-latest
     needs:
-      - _ac9e3b85-67f5-45e5-b3a0-970027c57065
+      - _9fe7e8d9-35e3-4c81-87dd-88b97dab1ce8
 
     steps:
       - name: "[Impl] Dump Contexts"
@@ -395,5 +395,5 @@ jobs:
 
       - name: Run Test
         run: |
-          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidator/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
+          python3 "${{ steps.checkout_source.outputs.repo_dir }}/src/GitHubConfigurationValidator/src/GitHubConfigurationValidatorLib/TestFiles/Binary_BuildVerificationTest.py" "${{ steps.unbundle.outputs.artifacts_dir }}"
 
