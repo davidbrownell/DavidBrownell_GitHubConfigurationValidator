@@ -32,3 +32,4 @@ test_localsystem.txt
 Scripts/GitHubConfigurationValidator.py
 
 src/GitHubConfigurationValidator/src/ConfigurationSchema/GeneratedCode/*.ConditionalInvocationQueryMixin.data
+src/GitHubConfigurationValidator/build
