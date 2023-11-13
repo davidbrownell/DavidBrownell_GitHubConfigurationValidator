@@ -150,14 +150,14 @@ def CreateDockerImage(
     no_squash: bool=TyperEx.typer.Option(False, "--no-squash", help="Do not squash layers within the image."),
     verbose: bool=TyperEx.typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=TyperEx.typer.Option(False, "--verbose", help="Write debug information to the terminal."),
-):
+) -> int:
     """Creates a docker image that can be used to run GitHubConfigurationValidator without installing all python dependencies."""
 
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
         source_root = PathEx.EnsureDir(Path(__file__).parent)
-        repo_root = PathEx.EnsureDir(source_root.parent)
+        repo_root = PathEx.EnsureDir(source_root.parent.parent)
 
         assert source_root != repo_root, (source_root, repo_root)
 
