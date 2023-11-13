@@ -156,7 +156,7 @@ def CreateDockerImage(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        source_root = PathEx.EnsureDir(Path(__file__).parent.parent)
+        source_root = PathEx.EnsureDir(Path(__file__).parent)
         repo_root = PathEx.EnsureDir(source_root.parent)
 
         assert source_root != repo_root, (source_root, repo_root)
