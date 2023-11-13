@@ -140,7 +140,9 @@ setup(
             ],
             "no_compress": False,
             "optimize": 0,
-            "packages": [],
+            "packages": [
+                "semantic_version",
+            ],
             "include_files": include_files,
         },
     },

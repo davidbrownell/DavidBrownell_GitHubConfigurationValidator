@@ -17,6 +17,8 @@
 
 from typing import Any, Optional
 
+from semantic_version import Version as SemVer
+
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateValuePlugin, Result
 
@@ -35,7 +37,8 @@ def _GetValue(
 Plugin = CreateValuePlugin(
     "License",
     PluginBase.ConfigurationType.Repository,
-    "null",
+    SemVer("0.1.0"),
+    "MIT License",
     "--license",
     "settings",
     None,

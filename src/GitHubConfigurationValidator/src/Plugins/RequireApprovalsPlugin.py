@@ -17,6 +17,8 @@
 
 from typing import Any, Optional
 
+from semantic_version import Version as SemVer
+
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateValuePlugin, Result
 
@@ -36,6 +38,7 @@ def _GetValue(
 Plugin = CreateValuePlugin(
     "RequireApprovals",
     PluginBase.ConfigurationType.BranchProtection,
+    SemVer("0.1.0"),
     1,
     "--require-approvals",
     "settings/branches",

@@ -27,6 +27,7 @@ from typing import Any, Callable, cast, Iterator, Optional, Pattern, Type as Pyt
 import requests
 import typer
 
+from semantic_version import Version as SemVer
 from typer.core import TyperGroup
 from typer_config.decorators import use_yaml_config
 
@@ -92,6 +93,7 @@ app                                         = typer.Typer(
 _plugin_name_argument                       = typer.Argument(None, help="Name of the plugin. Run `ListsPlugins` to list all available plugins.")
 _username_argument                          = typer.Argument(None, help="GitHub username or organization.")
 
+_max_plugin_version_option                  = typer.Option(None, "--max-plugin-version", help="Maximum plugin version to use.")
 _additional_plugin_dirs_option              = typer.Option(None, "--plugin-dir", file_okay=False, exists=True, help="Additional directories to search for plugins.")
 _github_url_option                          = typer.Option(_DEFAULT_GITHUB_URL, "--github-url", help="GitHub url. ")
 _pat_option                                 = typer.Option(None, "--pat", help="GitHub Personal Access Token (PAT) or filename containing a PAT.")
@@ -115,6 +117,7 @@ _exclude_plugins_option                     = typer.Option(None, "--exclude-plug
 @use_yaml_config()
 def ListPlugins(
     ctx: typer.Context,
+    max_plugin_version: Optional[str]=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
@@ -124,7 +127,7 @@ def ListPlugins(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [])
+        plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [], max_plugin_version)
 
         with dm.YieldStream() as stream:
             stream.write(
@@ -162,7 +165,7 @@ def PluginInfo(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [])
+        plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [], None)
 
         plugin = next((plugin for plugin in plugins if plugin.name == plugin_name), None)
         if plugin is None:
@@ -175,6 +178,7 @@ def PluginInfo(
                     """\
                     Name:                   {name}
                     Configuration Type:     {configuration_type}
+                    Introduced in Version:  {version}
 
                     Description
                     -----------
@@ -188,6 +192,7 @@ def PluginInfo(
                 ).format(
                     name=plugin.name,
                     configuration_type=plugin.configuration_type.name,
+                    version=plugin.version_introduced,
                     description=plugin.description,
                     resolution=plugin.resolution_description.format(
                         repository="<repo name here>",
@@ -215,12 +220,11 @@ def ListRepos(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        session = _CustomSession(github_url, pat)
+        session = _CustomSession(github_url, username, pat)
 
         repositories = _GetRepos(
             dm,
             session,
-            username,
             include_repos,
             exclude_repos,
             ignore_archived=ignore_archived,
@@ -255,6 +259,7 @@ def ValidateRepo(
     pat: str=_pat_option,
     include_plugins: list[str]=_include_plugins_option,
     exclude_plugins: list[str]=_exclude_plugins_option,
+    max_plugin_version=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
@@ -267,10 +272,16 @@ def ValidateRepo(
         with dm.Nested("Validating '{}'...".format(repository)) as validate_dm:
             _ValidateRepo(
                 validate_dm,
-                _CustomSession(github_url, pat),
-                username,
+                _CustomSession(github_url, username, pat),
                 repository,
-                _GetPlugins(ctx, validate_dm, additional_plugin_dirs, include_plugins, exclude_plugins),
+                _GetPlugins(
+                    ctx,
+                    validate_dm,
+                    additional_plugin_dirs,
+                    include_plugins,
+                    exclude_plugins,
+                    max_plugin_version,
+                ),
             )
 
 
@@ -295,6 +306,7 @@ def ValidateRepos(
     exclude_repos: list[str]=_exclude_repos_option,
     include_plugins: list[str]=_include_plugins_option,
     exclude_plugins: list[str]=_exclude_plugins_option,
+    max_plugin_version=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
@@ -304,14 +316,20 @@ def ValidateRepos(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, include_plugins, exclude_plugins)
+        plugins = _GetPlugins(
+            ctx,
+            dm,
+            additional_plugin_dirs,
+            include_plugins,
+            exclude_plugins,
+            max_plugin_version,
+        )
 
-        session = _CustomSession(github_url, pat)
+        session = _CustomSession(github_url, username, pat)
 
         repositories = _GetRepos(
             dm,
             session,
-            username,
             include_repos,
             exclude_repos,
             ignore_archived=ignore_archived,
@@ -339,11 +357,11 @@ def ValidateRepos(
                 with DoneManager.Create(
                     sink,
                     "Checking '{}'...".format(repository),
+                    output_flags=DoneManagerFlags.Create(verbose=dm.is_verbose, debug=dm.is_debug),
                 ) as this_dm:
                     _ValidateRepo(
                         this_dm,
                         session,
-                        username,
                         repository,
                         plugins,
                     )
@@ -389,6 +407,7 @@ class _CustomSession(requests.Session):
     def __init__(
         self,
         github_url: str,
+        username: str,
         pat: Optional[str],
         *args,
         **kwargs,
@@ -410,6 +429,7 @@ class _CustomSession(requests.Session):
             self.headers["Authorization"] = "Bearer {}".format(pat)
 
         self.github_url                     = github_url
+        self.username                       = username
         self.is_enterprise                  = self.github_url != _DEFAULT_GITHUB_URL
         self.has_pat                        = bool(pat)
 
@@ -459,12 +479,23 @@ def _GetPlugins(
     additional_plugin_dirs: list[Path],
     include_plugins: list[str],
     exclude_plugins: list[str],
+    max_plugin_version: Optional[str],
 ) -> list[Plugin]:
     include_plugin_regexes = _CreateRegexes(include_plugins)
     exclude_plugin_regexes = _CreateRegexes(exclude_plugins)
 
     del include_plugins
     del exclude_plugins
+
+    if max_plugin_version:
+        try:
+            semver = SemVer.coerce(max_plugin_version)
+        except:
+            raise DoneManagerException("'{}' is not a valid semantic version.".format(max_plugin_version))
+
+        is_valid_plugin_version_func = lambda version: version <= semver
+    else:
+        is_valid_plugin_version_func = lambda version: True
 
     plugin_dirs: list[Path] = [
         PathEx.EnsureDir(_root_dir / "Plugins"),
@@ -559,6 +590,16 @@ def _GetPlugins(
         for create_plugin_func in create_plugin_callback_funcs:
             plugin = create_plugin_func(arguments)
 
+            if not is_valid_plugin_version_func(plugin.version_introduced):
+                load_dm.WriteInfo(
+                    "'{}' was excluded due to its version ({} > {}).\n".format(
+                        plugin.name,
+                        plugin.version_introduced,
+                        max_plugin_version,
+                    ),
+                )
+                continue
+
             if exclude_plugin_regexes and any(expr.match(plugin.name) for expr in exclude_plugin_regexes):
                 load_dm.WriteInfo("'{}' was excluded.\n".format(plugin.name))
                 continue
@@ -578,7 +619,6 @@ def _GetPlugins(
 def _GetRepos(
     dm: DoneManager,
     session: _CustomSession,
-    username: str,
     includes: list[str],
     excludes: list[str],
     *,
@@ -609,7 +649,7 @@ def _GetRepos(
             response = session.get(
                 "{}/{}/repos".format(
                     "orgs" if session.is_enterprise else "users",
-                    username,
+                    session.username,
                 ),
                 params={
                     "page": page,
@@ -669,7 +709,6 @@ def _GetRepos(
 def _ValidateRepo(
     dm: DoneManager,
     session: _CustomSession,
-    username: str,
     repository: str,
     plugins: list[Plugin],
 ) -> None:
@@ -721,6 +760,20 @@ def _ValidateRepo(
 
                     # ----------------------------------------------------------------------
 
+                    # Create the repository url to include with errors
+                    repository_url = session.github_url
+
+                    if repository_url == "https://api.github.com":
+                        repository_url = "https://github.com"
+                    elif repository_url.endswith("/api/v3"):
+                        repository_url = repository_url[:-len("/api/v3")]
+
+                    repository_url += "/{}/{}".format(
+                        session.username,
+                        repository,
+                    )
+
+                    # Process the plugins
                     for plugin in plugins:
                         try:
                             results = plugin.Validate(response)
@@ -751,7 +804,7 @@ def _ValidateRepo(
                                     ).format(
                                         TextwrapEx.Indent(
                                             plugin.resolution_description.format(
-                                                repository=repository,
+                                                repository=repository_url,
                                             ),
                                             4,
                                             skip_first_line=True,
@@ -771,7 +824,7 @@ def _ValidateRepo(
 
     settings = RunPlugins(
         "Checking repository settings...",
-        "repos/{}/{}".format(username, repository),
+        "repos/{}/{}".format(session.username, repository),
         grouped_plugins.get(Plugin.ConfigurationType.Repository),
         always_run=True,
     )
@@ -782,7 +835,7 @@ def _ValidateRepo(
 
     settings = RunPlugins(
         "Checking branch settings...",
-        "repos/{}/{}/branches/{}".format(username, repository, default_branch),
+        "repos/{}/{}/branches/{}".format(session.username, repository, default_branch),
         grouped_plugins.get(Plugin.ConfigurationType.Branch),
     )
 

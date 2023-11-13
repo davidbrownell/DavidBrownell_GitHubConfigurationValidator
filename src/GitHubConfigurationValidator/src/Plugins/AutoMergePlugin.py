@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from semantic_version import Version as SemVer
+
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateEnablePlugin
 
@@ -23,6 +25,7 @@ from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateEnablePlugin
 Plugin = CreateEnablePlugin(
     "AutoMerge",
     PluginBase.ConfigurationType.Repository,
+    SemVer("0.1.0"),
     True,
     "--no-auto-merge",
     "settings",

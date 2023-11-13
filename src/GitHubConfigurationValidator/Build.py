@@ -143,18 +143,20 @@ class BuildInfo(BuildInfoBase):
 
 
 # ----------------------------------------------------------------------
-def CreateLinuxBinary(
-    output_dir: Path=TyperEx.typer.Argument(..., file_okay=False, help="Binary output directory."),
-    docker_base_image: str=TyperEx.typer.Option("ubuntu:latest", "--base-image", help="Name of the docker image used to build the binary."),
+def CreateDockerImage(
+    docker_image_name: str=TyperEx.typer.Argument(..., help="Name of the docker image to create."),
+    docker_base_image: str=TyperEx.typer.Option("ubuntu:latest", "--base-image", help="Name of the docker image used as a base for the created image; the value will be extracted from the binary name if not provided on the command line."),
+    force: bool=TyperEx.typer.Option(False, "--force", help="Force the (re)generation of layers within the image."),
+    no_squash: bool=TyperEx.typer.Option(False, "--no-squash", help="Do not squash layers within the image."),
     verbose: bool=TyperEx.typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=TyperEx.typer.Option(False, "--verbose", help="Write debug information to the terminal."),
-) -> int:
-    """Cross-compiles a linux binary (using docker) that can be used to run GitHugConfigurationValidator without installing all python dependencies."""
+):
+    """Creates a docker image that can be used to run GitHubConfigurationValidator without installing all python dependencies."""
 
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        source_root = PathEx.EnsureDir(Path(__file__).parent.parent)
+        source_root = PathEx.EnsureDir(Path(__file__).parent)
         repo_root = PathEx.EnsureDir(source_root.parent)
 
         assert source_root != repo_root, (source_root, repo_root)
@@ -166,10 +168,7 @@ def CreateLinuxBinary(
             # Calculate the current version
             version: Optional[str] = None
 
-            with dm.Nested(
-                "Calculating version...",
-                lambda: version,
-            ):
+            with dm.Nested("Calculating version...", lambda: version):
                 result = SubprocessEx.Run(
                     "AutoSemVer{} --no-metadata --no-branch-name --quiet".format(CurrentShell.script_extensions[0]),
                     cwd=source_root,
@@ -180,9 +179,10 @@ def CreateLinuxBinary(
 
             # Create the docker file used to build the binary
             docker_filename = working_dir / "Dockerfile"
+            archive_name = "GitHubConfigurationValidator-{}-{}.tgz".format(version, docker_base_image.split(":")[0])
 
-            with dm.Nested("Creating dockerfile..."):
-                # Remove the local build directory, as we don't want it to be copied to the docker image
+            with dm.Nested("Creating the archive dockerfile..."):
+                # Remove the local build directory (if it exists), as we don't want it to be copied to the docker image
                 PathEx.RemoveTree(Path(__file__).parent / "build")
 
                 with docker_filename.open("w") as f:
@@ -207,16 +207,15 @@ def CreateLinuxBinary(
 
                             RUN bash -c "mkdir /tmp/GitHubConfigurationValidator_binary \\
                                 && cd /tmp/GitHubConfigurationValidator \\
-                                && tar -czvf /tmp/GitHubConfigurationValidator_binary/GitHubConfigurationValidator-{version}-{os}.tgz *"
+                                && tar -czvf /tmp/GitHubConfigurationValidator_binary/{archive_name} *"
                             """,
                         ).format(
                             base_image=docker_base_image,
-                            version=version,
-                            os=docker_base_image.split(":")[0],
+                            archive_name=archive_name,
                         ),
                     )
 
-            # Create the image that builds the archive
+            # Create the image that includes the built archive
             with dm.Nested("Building the archive via a docker image...") as build_dm:
                 command_line = 'docker build --tag {tag} -f {dockerfile} .'.format(
                     tag=unique_id,
@@ -235,13 +234,11 @@ def CreateLinuxBinary(
                     if build_dm.result != 0:
                         return build_dm.result
 
-            # Create the archive within the image
+            # Extract the archive within the image
             with dm.Nested("Extracting the archive from the docker image...") as extract_dm:
-                output_dir.mkdir(parents=True, exist_ok=True)
-
                 command_line = 'docker run --rm -v "{output_dir}:/local" {tag} bash -c "cp /tmp/GitHubConfigurationValidator_binary/* /local"'.format(
                     tag=unique_id,
-                    output_dir=output_dir,
+                    output_dir=working_dir,
                 )
 
                 extract_dm.WriteVerbose("Command Line: {}\n\n".format(command_line))
@@ -264,39 +261,8 @@ def CreateLinuxBinary(
                     if remove_dm.result != 0:
                         return remove_dm.result
 
-            return dm.result
-
-
-# ----------------------------------------------------------------------
-def CreateDockerImage(
-    docker_image_name: str=TyperEx.typer.Argument(..., help="Name of the docker image to create."),
-    binary_filename: Path=TyperEx.typer.Argument(..., file_okay=True, dir_okay=False, exists=True, help="Path to the binary file produced by calls to 'CreateLinuxBinary'."),
-    docker_base_image: Optional[str]=TyperEx.typer.Option(None, "--base-image", help="Name of the docker image used as a base for the created image; the value will be extracted from the binary name if not provided on the command line."),
-    force: bool=TyperEx.typer.Option(False, "--force", help="Force the (re)generation of layers within the image."),
-    no_squash: bool=TyperEx.typer.Option(False, "--no-squash", help="Do not squash layers within the image."),
-    verbose: bool=TyperEx.typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
-    debug: bool=TyperEx.typer.Option(False, "--verbose", help="Write debug information to the terminal."),
-) -> int:
-    """Creates a docker image capable of executing a binary produced by `CreateLinuxBinary`."""
-
-    with DoneManager.CreateCommandLine(
-        output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
-    ) as dm:
-        match = re.match(r"^GitHubConfigurationValidator-(?P<version>[^-]+)-(?P<image_name>[^\.]+)\.tgz$", binary_filename.name)
-        if not match:
-            dm.WriteError("The filename '{}' is not in the expected format.".format(binary_filename))
-            return dm.result
-
-        if docker_base_image is None:
-            docker_base_image = "{}:latest".format(match.group("image_name"))
-
-        binary_version = match.group("version").lstrip("v")
-
-        working_dir = CurrentShell.CreateTempDirectory()
-        with ExitStack(lambda: PathEx.RemoveTree(working_dir)):
-            docker_filename = working_dir / "Dockerfile"
-
-            with dm.Nested("Creating dockerfile..."):
+            # Create the execute dockerfile
+            with dm.Nested("Creating the execute dockerfile..."):
                 with docker_filename.open("w") as f:
                     f.write(
                         textwrap.dedent(
@@ -312,14 +278,14 @@ def CreateDockerImage(
                                 WORKDIR GitHubConfigurationValidator
 
                                 COPY . .
-                                RUN bash -c "tar -xvf {name} \\
-                                    && rm {name}"
+                                RUN bash -c "tar -xvf {archive_name} \\
+                                    && rm {archive_name}"
 
                                 ENTRYPOINT ["./GitHubConfigurationValidator"]
                             """,
                         ).format(
                             base_image=docker_base_image,
-                            name=binary_filename.name,
+                            archive_name=archive_name,
                         ),
                     )
 
@@ -337,16 +303,16 @@ def CreateDockerImage(
                     build_dm.result = SubprocessEx.Stream(
                         command_line,
                         stream,
-                        cwd=binary_filename.parent,
+                        cwd=working_dir,
                     )
 
                     if build_dm.result != 0:
                         return build_dm.result
 
             with dm.Nested("Tagging image...") as tag_dm:
-                command_line = 'docker tag {image_name}:latest {image_name}:{binary_version}'.format(
+                command_line = 'docker tag {image_name}:latest {image_name}:{version}'.format(
                     image_name=docker_image_name,
-                    binary_version=binary_version,
+                    version=version,
                 )
 
                 tag_dm.WriteVerbose("Command Line: {}\n\n".format(command_line))

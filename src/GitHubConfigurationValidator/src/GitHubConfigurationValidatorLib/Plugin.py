@@ -21,7 +21,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Any, Union
 
-from Common_Foundation.Types import extensionmethod
+from semantic_version import Version as SemVer
 
 from Common_FoundationEx.TyperEx import TypeDefinitionsType
 
@@ -83,6 +83,7 @@ class Plugin(ABC):
         self,
         name: str,
         configuration_type: "Plugin.ConfigurationType",
+        version_introduced: SemVer,
         description: str,
         resolution_description: str,
     ):
@@ -91,6 +92,7 @@ class Plugin(ABC):
 
         self.name                           = name
         self.configuration_type             = configuration_type
+        self.version_introduced             = version_introduced
         self.description                    = description
         self.resolution_description         = resolution_description
 
