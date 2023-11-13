@@ -19,11 +19,13 @@ import textwrap
 
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Optional, Type as PythonType, TypeVar
-from Common_FoundationEx.TyperEx import TypeDefinitionsType
 
 import typer
 
+from semantic_version import Version as SemVer
+
 from Common_Foundation.Types import overridemethod
+from Common_FoundationEx.TyperEx import TypeDefinitionsType
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 
@@ -49,6 +51,7 @@ class Result(Generic[ResultT]):
 def CreateEnablePlugin(
     name: str,
     configuration_type: PluginBase.ConfigurationType,
+    version_introduced: SemVer,
     instantiation_parameter_default_value: bool,
     instantiation_parameter_flag_name: str,
     github_settings_url_suffix: str,
@@ -102,11 +105,12 @@ def CreateEnablePlugin(
             super(Plugin, self).__init__(
                 name,
                 configuration_type,
+                version_introduced,
                 "Validates that {} is {}.".format(subject, enable_desc),
                 textwrap.dedent(
                     """\
-                    1) Visit `{{repository}}/{github_settings_url_suffix}`
-                    2) Locate the `{github_settings_section}` section
+                    1) Visit '{{repository}}/{github_settings_url_suffix}'
+                    2) Locate the '{github_settings_section}' section
                     3) Ensure that {github_settings_value} is {checked_desc}
                     """,
                 ).format(
@@ -147,6 +151,7 @@ CreateValuePluginT                          = TypeVar("CreateValuePluginT")
 def CreateValuePlugin(
     name: str,
     configuration_type: PluginBase.ConfigurationType,
+    version_introduced: SemVer,
     instantiation_parameter_default_value: CreateValuePluginT,
     instantiation_parameter_flag_name: str,
     github_settings_url_suffix: str,
@@ -215,6 +220,7 @@ def CreateValuePlugin(
             super(Plugin, self).__init__(
                 name,
                 configuration_type,
+                version_introduced,
                 "Validates that {} is set to '{}'.".format(subject, value),
                 resolution_instructions,
             )

@@ -17,6 +17,8 @@
 
 from typing import Any
 
+from semantic_version import Version as SemVer
+
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
 from GitHubConfigurationValidatorLib.Impl.PluginImpl import CreateEnablePlugin
 
@@ -36,6 +38,7 @@ def _GetValue(
 Plugin = CreateEnablePlugin(
     "RequireUpToDateBranches",
     PluginBase.ConfigurationType.BranchProtection,
+    SemVer("0.1.0"),
     True,
     "--no-require-up-to-date-branches",
     "settings/branches",

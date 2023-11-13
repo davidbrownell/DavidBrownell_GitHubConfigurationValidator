@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+from semantic_version import Version as SemVer
+
 from typing import Any
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -39,6 +41,7 @@ def _GetValue(
 Plugin = CreateEnablePlugin(
     "SecretScanningPushProtection",
     PluginBase.ConfigurationType.Repository,
+    SemVer("0.1.0"),
     True,
     "--no-secret-scanning-push-protection",
     "settings/security_analysis",
