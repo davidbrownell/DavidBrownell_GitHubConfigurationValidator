@@ -779,12 +779,12 @@ def _ValidateRepo(
                             results = plugin.Validate(response)
                         except KeyError as ex:
                             if session.has_pat:
-                                raise
-
-                            results = (
-                                Plugin.MessageType.Warning,
-                                "Configuration information was not found; this can generally be resolved by providing a GitHub Personal Access Token (PAT) on the command line (Error: {}).".format(ex),
-                            )
+                                results = "Unexpected error; errors of this type are generally associated with permission/access issues - ensure that this tool is run by an administrator of the repository (Error: {}).".format(ex)
+                            else:
+                                results = (
+                                    Plugin.MessageType.Warning,
+                                    "Configuration information was not found; this can generally be resolved by providing a GitHub Personal Access Token (PAT) on the command line (Error: {}).".format(ex),
+                                )
 
                         for message_type, message in EnumResults(results):
                             message = "[{}] {}".format(plugin.name, message)
