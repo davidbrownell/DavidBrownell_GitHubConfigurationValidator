@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any, Optional
 
 from semantic_version import Version as SemVer
@@ -44,4 +46,18 @@ Plugin = CreateValuePlugin(
     None,
     None,
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to use the MIT License.
+
+        Reasons for this Default
+        ------------------------
+        - The MIT License is a permissive license that allows for the use of the code in any way and
+          a reasonable default for open source software.
+
+        Reasons to Override this Default
+        --------------------------------
+        - There are many good open source licenses and the MIT License may not be appropriate in all scenarios.
+        """,
+    ),
 )

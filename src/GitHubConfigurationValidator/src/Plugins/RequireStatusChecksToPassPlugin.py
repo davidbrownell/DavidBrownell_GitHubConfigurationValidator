@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require status checks to pass before merging",
     lambda configuration: configuration.get("required_status_checks", None) is not None,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require status checks to pass before merging a pull request.
+
+        Reasons for this Default
+        ------------------------
+        - Status checks are an important part of the development process and should not be bypassed.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

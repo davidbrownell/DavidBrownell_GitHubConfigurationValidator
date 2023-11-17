@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Branch protection rules",
     "protected",
     lambda configuration: configuration["protected"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to protect the mainline branch.
+
+        Reasons for this Default
+        ------------------------
+        - The mainline branch is the most important branch in a repository and should be protected.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

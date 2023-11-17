@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from typing import Any
@@ -49,4 +51,17 @@ Plugin = CreateEnablePlugin(
     "Push protection",
     _GetValue,
     subject="Secret Scanning Push Protection",
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to enable secret scanning push protection.
+
+        Reasons for this Default
+        ------------------------
+        - Secrets should not be checked into code.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

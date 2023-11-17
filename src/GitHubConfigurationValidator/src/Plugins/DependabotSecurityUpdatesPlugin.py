@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any
 
 from semantic_version import Version as SemVer
@@ -48,4 +50,17 @@ Plugin = CreateEnablePlugin(
     "Dependabot",
     "Dependabot security updates",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to enable Dependabot security updates.
+
+        Reasons for this Default
+        ------------------------
+        - Increases the security of the repository by automatically applying security updates.
+
+        Reasons to Override this Default
+        --------------------------------
+        - Dependabot security updates are not supported for the repository or by the organization.
+        """,
+    ),
 )

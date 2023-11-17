@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Rules applied to everyone including administrators",
     "Allow deletions",
     lambda configuration: configuration["allow_deletions"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to not allow the deletion of the mainline branch.
+
+            Reasons for this Default
+            ------------------------
+            - Bad things happen when the mainline branch is deleted.
+
+            Reasons to Override this Default
+            --------------------------------
+            <unknown>
+        """,
+    ),
 )

@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any
 
 from semantic_version import Version as SemVer
@@ -48,4 +50,17 @@ Plugin = CreateEnablePlugin(
     "Secret scanning",
     "Secret scanning",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to enable secret scanning.
+
+        Reasons for this Default
+        ------------------------
+        - Secrets should not be checked into code.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

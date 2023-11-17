@@ -18,7 +18,6 @@
 import importlib
 import re
 import sys
-import textwrap
 
 from io import StringIO
 from pathlib import Path
@@ -64,9 +63,13 @@ _root_dir = PathEx.EnsureDir(_root_dir.resolve())
 #       - This file as 'EntryPoint/__main__.py' rather than '../EntryPoint.py'
 #       - Build.py/setup.py located outside of 'src'
 #
+
+# Note that other plugins may rely on this directory being in the path (for example, if they want to
+# import other plugins), so we do not remove it.
 sys.path.insert(0, str(_root_dir))
-with ExitStack(lambda: sys.path.pop(0)):
-    from GitHubConfigurationValidatorLib.Plugin import Plugin
+
+from GitHubConfigurationValidatorLib.GitHubSession import GitHubSession
+from GitHubConfigurationValidatorLib.Plugin import Plugin
 
 
 # ----------------------------------------------------------------------
@@ -103,6 +106,7 @@ _include_repos_option                       = typer.Option(None, "--include-repo
 _exclude_repos_option                       = typer.Option(None, "--exclude-repo", help="Regular expression matching GitHub repository names that should not be processed.")
 _include_plugins_option                     = typer.Option(None, "--include-plugin", help="Regular expression matching plugin names that should be applied.")
 _exclude_plugins_option                     = typer.Option(None, "--exclude-plugin", help="Regular expression matching plugin names that should not be applied.")
+_with_rationale_option                      = typer.Option(None, "--with-rationale", help="Include plugin rationale in the output.")
 
 
 # ----------------------------------------------------------------------
@@ -130,17 +134,27 @@ def ListPlugins(
         plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [], max_plugin_version)
 
         with dm.YieldStream() as stream:
-            stream.write(
-                TextwrapEx.CreateTable(
-                    ["Name", "Description"],
-                    [
-                        [plugin.name, plugin.description]
-                        for plugin in plugins
-                    ],
-                ),
-            )
+            if not dm.is_verbose:
+                stream.write(
+                    TextwrapEx.CreateTable(
+                        ["Name", "Description"],
+                        [
+                            [plugin.name, plugin.description]
+                            for plugin in plugins
+                        ],
+                    ),
+                )
 
-            stream.write("\n")
+                stream.write("\n")
+
+                return
+
+            for plugin in plugins:
+                stream.write(
+                    plugin.GenerateDisplayString(
+                        resolution_repository="<repo name here>",
+                    ),
+                )
 
 
 # ----------------------------------------------------------------------
@@ -174,29 +188,8 @@ def PluginInfo(
 
         with dm.YieldStream() as stream:
             stream.write(
-                textwrap.dedent(
-                    """\
-                    Name:                   {name}
-                    Configuration Type:     {configuration_type}
-                    Introduced in Version:  {version}
-
-                    Description
-                    -----------
-                    {description}
-
-                    Resolution
-                    ----------
-                    {resolution}
-
-                    """,
-                ).format(
-                    name=plugin.name,
-                    configuration_type=plugin.configuration_type.name,
-                    version=plugin.version_introduced,
-                    description=plugin.description,
-                    resolution=plugin.resolution_description.format(
-                        repository="<repo name here>",
-                    ),
+                plugin.GenerateDisplayString(
+                    resolution_repository="<repo name here>",
                 ),
             )
 
@@ -220,7 +213,7 @@ def ListRepos(
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
-        session = _CustomSession(github_url, username, pat)
+        session = GitHubSession(github_url, username, pat)
 
         repositories = _GetRepos(
             dm,
@@ -261,10 +254,14 @@ def ValidateRepo(
     exclude_plugins: list[str]=_exclude_plugins_option,
     max_plugin_version=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
+    with_rationale: bool=_with_rationale_option,
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
 ) -> None:
     """Validates a GitHub repository."""
+
+    if with_rationale and not verbose:
+        verbose = True
 
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
@@ -272,7 +269,7 @@ def ValidateRepo(
         with dm.Nested("Validating '{}'...".format(repository)) as validate_dm:
             _ValidateRepo(
                 validate_dm,
-                _CustomSession(github_url, username, pat),
+                GitHubSession(github_url, username, pat),
                 repository,
                 _GetPlugins(
                     ctx,
@@ -282,6 +279,7 @@ def ValidateRepo(
                     exclude_plugins,
                     max_plugin_version,
                 ),
+                with_rationale=with_rationale,
             )
 
 
@@ -308,10 +306,14 @@ def ValidateRepos(
     exclude_plugins: list[str]=_exclude_plugins_option,
     max_plugin_version=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
+    with_rationale: bool=_with_rationale_option,
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
 ) -> None:
     """Validates repositories associated with a GitHub user/organization."""
+
+    if with_rationale and not verbose:
+        verbose = True
 
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
@@ -325,7 +327,7 @@ def ValidateRepos(
             max_plugin_version,
         )
 
-        session = _CustomSession(github_url, username, pat)
+        session = GitHubSession(github_url, username, pat)
 
         repositories = _GetRepos(
             dm,
@@ -364,6 +366,7 @@ def ValidateRepos(
                         session,
                         repository,
                         plugins,
+                        with_rationale=with_rationale,
                     )
 
                 if this_dm.result != 0:
@@ -395,55 +398,6 @@ def ValidateRepos(
                 dm.WriteLine("")
 
                 dm.result = -1
-
-
-# ----------------------------------------------------------------------
-# |
-# |  Private Types
-# |
-# ----------------------------------------------------------------------
-class _CustomSession(requests.Session):
-    # ----------------------------------------------------------------------
-    def __init__(
-        self,
-        github_url: str,
-        username: str,
-        pat: Optional[str],
-        *args,
-        **kwargs,
-    ):
-        super(_CustomSession, self).__init__(*args, **kwargs)
-
-        if github_url.endswith("/"):
-            github_url = github_url[:-1]
-
-        self.headers["X-GitHub-Api-Version"] = "2022-11-28"
-
-        if pat:
-            potential_file = Path(pat)
-
-            if potential_file.is_file():
-                with potential_file.open("r") as f:
-                    pat = f.read().strip()
-
-            self.headers["Authorization"] = "Bearer {}".format(pat)
-
-        self.github_url                     = github_url
-        self.username                       = username
-        self.is_enterprise                  = self.github_url != _DEFAULT_GITHUB_URL
-        self.has_pat                        = bool(pat)
-
-    # ----------------------------------------------------------------------
-    def request(self, method, url, *args, **kwargs):
-        if not url.startswith("/"):
-            url = "/{}".format(url)
-
-        return super(_CustomSession, self).request(
-            method,
-            "{}{}".format(self.github_url, url),
-            *args,
-            **kwargs,
-        )
 
 
 # ----------------------------------------------------------------------
@@ -618,7 +572,7 @@ def _GetPlugins(
 # ----------------------------------------------------------------------
 def _GetRepos(
     dm: DoneManager,
-    session: _CustomSession,
+    session: GitHubSession,
     includes: list[str],
     excludes: list[str],
     *,
@@ -649,7 +603,7 @@ def _GetRepos(
             response = session.get(
                 "{}/{}/repos".format(
                     "orgs" if session.is_enterprise else "users",
-                    session.username,
+                    session.github_username,
                 ),
                 params={
                     "page": page,
@@ -708,14 +662,82 @@ def _GetRepos(
 # ----------------------------------------------------------------------
 def _ValidateRepo(
     dm: DoneManager,
-    session: _CustomSession,
+    session: GitHubSession,
     repository: str,
     plugins: list[Plugin],
+    *,
+    with_rationale: bool=False,
 ) -> None:
     grouped_plugins: dict[Plugin.ConfigurationType, list[Plugin]] = {}
 
     for plugin in plugins:
         grouped_plugins.setdefault(plugin.configuration_type, []).append(plugin)
+
+    # Create the repository url to include with errors
+    repository_url = session.github_url
+
+    if repository_url == "https://api.github.com":
+        repository_url = "https://github.com"
+    elif repository_url.endswith("/api/v3"):
+        repository_url = repository_url[:-len("/api/v3")]
+
+    repository_url += "/{}/{}".format(
+        session.github_username,
+        repository,
+    )
+
+    # ----------------------------------------------------------------------
+    def DisplayResults(
+        dm: DoneManager,
+        plugin: Plugin,
+        results: Plugin.ValidateResultType,
+        *,
+        decorate_message_with_plugin_name: bool=True,
+    ) -> None:
+        # ----------------------------------------------------------------------
+        def EnumResults(
+            results: Plugin.ValidateResultType,
+        ) -> Iterator[tuple[Plugin.MessageType, str]]:
+            if results is None:
+                return
+
+            if not isinstance(results, list):
+                results = [results, ]
+
+            for result in results:
+                if isinstance(result, str):
+                    message_type = Plugin.MessageType.Error
+                    message = result
+                else:
+                    message_type, message = result
+
+                yield message_type, message
+
+        # ----------------------------------------------------------------------
+
+        for message_type, message in EnumResults(results):
+            if decorate_message_with_plugin_name:
+                message = "[{}] {}".format(plugin.name, message)
+
+            if message_type == Plugin.MessageType.Error:
+                dm.WriteError(message)
+
+                if dm.is_verbose:
+                    dm.WriteVerbose(
+                        "\n{}".format(
+                            plugin.GenerateDisplayString(
+                                include_header=False,
+                                resolution_repository=repository_url,
+                                include_rationale=with_rationale,
+                            ),
+                        ),
+                    )
+            elif message_type == Plugin.MessageType.Warning:
+                dm.WriteWarning(message)
+            elif message_type == Plugin.MessageType.Info:
+                dm.WriteInfo(message)
+            else:
+                assert False, message_type  # pragma: no cover
 
     # ----------------------------------------------------------------------
     def RunPlugins(
@@ -739,27 +761,6 @@ def _ValidateRepo(
 
             if plugins:
                 with run_dm.Nested("Running {}...".format(inflect.no("plugin", len(plugins)))) as plugin_dm:
-                    # ----------------------------------------------------------------------
-                    def EnumResults(
-                        results: Plugin.ValidateResultType,
-                    ) -> Iterator[tuple[Plugin.MessageType, str]]:
-                        if results is None:
-                            return
-
-                        if not isinstance(results, list):
-                            results = [results, ]
-
-                        for result in results:
-                            if isinstance(result, str):
-                                message_type = Plugin.MessageType.Error
-                                message = result
-                            else:
-                                message_type, message = result
-
-                            yield message_type, message
-
-                    # ----------------------------------------------------------------------
-
                     # Create the repository url to include with errors
                     repository_url = session.github_url
 
@@ -769,7 +770,7 @@ def _ValidateRepo(
                         repository_url = repository_url[:-len("/api/v3")]
 
                     repository_url += "/{}/{}".format(
-                        session.username,
+                        session.github_username,
                         repository,
                     )
 
@@ -786,37 +787,7 @@ def _ValidateRepo(
                                     "Configuration information was not found; this can generally be resolved by providing a GitHub Personal Access Token (PAT) on the command line (Error: {}).".format(ex),
                                 )
 
-                        for message_type, message in EnumResults(results):
-                            message = "[{}] {}".format(plugin.name, message)
-
-                            if message_type == Plugin.MessageType.Error:
-                                plugin_dm.WriteError(message)
-
-                                plugin_dm.WriteVerbose(
-                                    textwrap.dedent(
-                                        """\
-
-                                        To address this error:
-
-                                            {}
-
-                                        """,
-                                    ).format(
-                                        TextwrapEx.Indent(
-                                            plugin.resolution_description.format(
-                                                repository=repository_url,
-                                            ),
-                                            4,
-                                            skip_first_line=True,
-                                        ),
-                                    ),
-                                )
-                            elif message_type == Plugin.MessageType.Warning:
-                                plugin_dm.WriteWarning(message)
-                            elif message_type == Plugin.MessageType.Info:
-                                plugin_dm.WriteInfo(message)
-                            else:
-                                assert False, message_type  # pragma: no cover
+                        DisplayResults(plugin_dm, plugin, results)
 
             return response
 
@@ -824,7 +795,7 @@ def _ValidateRepo(
 
     settings = RunPlugins(
         "Checking repository settings...",
-        "repos/{}/{}".format(session.username, repository),
+        "repos/{}/{}".format(session.github_username, repository),
         grouped_plugins.get(Plugin.ConfigurationType.Repository),
         always_run=True,
     )
@@ -835,7 +806,7 @@ def _ValidateRepo(
 
     settings = RunPlugins(
         "Checking branch settings...",
-        "repos/{}/{}/branches/{}".format(session.username, repository, default_branch),
+        "repos/{}/{}/branches/{}".format(session.github_username, repository, default_branch),
         grouped_plugins.get(Plugin.ConfigurationType.Branch),
     )
 
@@ -850,6 +821,18 @@ def _ValidateRepo(
             protection_url,
             grouped_plugins.get(Plugin.ConfigurationType.BranchProtection),
         )
+
+    custom_plugins = grouped_plugins.get(Plugin.ConfigurationType.Custom, None)
+    if custom_plugins:
+        with dm.Nested("Running {}...".format(inflect.no("custom plugin", len(custom_plugins)))) as custom_dm:
+            for plugin in custom_plugins:
+                with custom_dm.Nested("Running '{}'...".format(plugin.name)) as plugin_dm:
+                    DisplayResults(
+                        plugin_dm,
+                        plugin,
+                        plugin.CustomValidate(plugin_dm, session, repository),
+                        decorate_message_with_plugin_name=False,
+                    )
 
 
 # ----------------------------------------------------------------------

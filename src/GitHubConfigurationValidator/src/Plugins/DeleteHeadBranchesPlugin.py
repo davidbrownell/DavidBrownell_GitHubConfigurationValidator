@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,19 @@ Plugin = CreateEnablePlugin(
     "Pull Requests",
     "Automatically delete head branches",
     lambda configuration: configuration["delete_branch_on_merge"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to automatically delete head branches once they have been merged into the mainline branch.
+
+        Reasons for this Default
+        ------------------------
+        - Long-lived branches make integration more difficult, as changes accumulate over time.
+
+        Reasons to Override this Default
+        --------------------------------
+        - You support release branches and may want to merge changes from this release branch into the mainline branch
+          (although, it is possible to workaround this issue by creating a pull request from a temporary branch that
+          includes cherry-picked changes from the release branch).
+        """,
+    ),
 )

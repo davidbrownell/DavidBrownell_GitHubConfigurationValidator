@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,18 @@ Plugin = CreateEnablePlugin(
     "General",
     "Require contributors to sign off on web-based commits",
     lambda configuration: configuration["web_commit_signoff_required"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require contributors to sign off on web-based commits.
+
+        Reasons for this Default
+        ------------------------
+        - All changes (regardless of where they were made) should go through the same validation process.
+
+        Reasons to Override this Default
+        --------------------------------
+        - Changes made via the web interface are considered to be benign and should not be subject to
+          the standard validation process.
+        """,
+    ),
 )

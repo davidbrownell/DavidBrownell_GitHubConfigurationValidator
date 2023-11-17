@@ -216,7 +216,10 @@ def CreateDockerImage(
                     )
 
             # Create the image that includes the built archive
-            with dm.Nested("Building the archive via a docker image...") as build_dm:
+            with dm.Nested(
+                "Building the archive via a docker image...",
+                suffix="\n",
+            ) as build_dm:
                 command_line = 'docker build --tag {tag} -f {dockerfile} .'.format(
                     tag=unique_id,
                     dockerfile=docker_filename,
@@ -235,7 +238,10 @@ def CreateDockerImage(
                         return build_dm.result
 
             # Extract the archive within the image
-            with dm.Nested("Extracting the archive from the docker image...") as extract_dm:
+            with dm.Nested(
+                "Extracting the archive from the docker image...",
+                suffix="\n",
+            ) as extract_dm:
                 command_line = 'docker run --rm -v "{output_dir}:/local" {tag} bash -c "cp /tmp/GitHubConfigurationValidator_binary/* /local"'.format(
                     tag=unique_id,
                     output_dir=working_dir,
@@ -250,7 +256,10 @@ def CreateDockerImage(
                         return extract_dm.result
 
             # Remove the image
-            with dm.Nested("Removing docker image...") as remove_dm:
+            with dm.Nested(
+                "Removing docker image...",
+                suffix="\n",
+            ) as remove_dm:
                 command_line = 'docker image rm {}'.format(unique_id)
 
                 remove_dm.WriteVerbose("Command Line: {}\n\n".format(command_line))
@@ -289,7 +298,10 @@ def CreateDockerImage(
                         ),
                     )
 
-            with dm.Nested("Building docker image...") as build_dm:
+            with dm.Nested(
+                "Building docker image...",
+                suffix="\n",
+            ) as build_dm:
                 command_line = 'docker build --tag {image_name} -f {dockerfile}{squash}{no_cache} .'.format(
                     image_name=docker_image_name,
                     dockerfile=docker_filename,
@@ -309,7 +321,10 @@ def CreateDockerImage(
                     if build_dm.result != 0:
                         return build_dm.result
 
-            with dm.Nested("Tagging image...") as tag_dm:
+            with dm.Nested(
+                "Tagging docker image...",
+                suffix="\n",
+            ) as tag_dm:
                 command_line = 'docker tag {image_name}:latest {image_name}:{version}'.format(
                     image_name=docker_image_name,
                     version=version,
@@ -322,6 +337,41 @@ def CreateDockerImage(
 
                     if tag_dm.result != 0:
                         return tag_dm.result
+
+            with dm.Nested("Validating docker image...") as validate_dm:
+                command_line = 'docker run --rm {image_name}:latest ListPlugins'.format(
+                    image_name=docker_image_name,
+                )
+
+                validate_dm.WriteVerbose("Command Line: {}\n\n".format(command_line))
+
+                result = SubprocessEx.Run(command_line)
+
+                validate_dm.result = result.returncode
+
+                if validate_dm.result == 0:
+                    validate_dm.WriteInfo(result.output)
+
+                    match = re.search(
+                        r"(?P<num>\d+) plugins found",
+                        result.output,
+                    )
+
+                    if not match:
+                        validate_dm.WriteError("The expected text was not found.\n")
+                    else:
+                        num_plugins = int(match.group("num"))
+
+                        # We want to ensure that there are a large number of plugins, but don't want
+                        # to provide an exact value as we will have to update this code every time we
+                        # add a new plugin. There are 34 plugins at the time that this code was written.
+                        if num_plugins < 30:
+                            validate_dm.WriteError("Only {} plugins were found.\n".format(num_plugins))
+                        else:
+                            validate_dm.WriteInfo("{} plugins found.\n".format(match.group("num")))
+
+                if validate_dm.result != 0:
+                    return validate_dm.result
 
         return dm.result
 

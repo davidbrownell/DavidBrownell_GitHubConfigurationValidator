@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Pull Requests",
     "Allow merge commits",
     lambda configuration: configuration["allow_merge_commit"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to allow merge commits.
+
+        Reasons for this Default
+        ------------------------
+        - Merge commits are the most basic way to merge from a branch into another branch.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )
