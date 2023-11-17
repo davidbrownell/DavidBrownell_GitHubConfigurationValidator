@@ -16,14 +16,21 @@
 """Contains the Plugin object"""
 
 import re
+import textwrap
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from semantic_version import Version as SemVer
 
+from Common_Foundation.Streams.DoneManager import DoneManager
+from Common_Foundation import TextwrapEx
+from Common_Foundation.Types import extensionmethod
+
 from Common_FoundationEx.TyperEx import TypeDefinitionsType
+
+from GitHubConfigurationValidatorLib.GitHubSession import GitHubSession
 
 
 # ----------------------------------------------------------------------
@@ -41,6 +48,7 @@ class Plugin(ABC):
         Repository                          = auto()
         Branch                              = auto()
         BranchProtection                    = auto()
+        Custom                              = auto()
 
     # ----------------------------------------------------------------------
     class MessageType(Enum):
@@ -86,6 +94,7 @@ class Plugin(ABC):
         version_introduced: SemVer,
         description: str,
         resolution_description: str,
+        rationale: Optional[str]=None,
     ):
         if not self.__class__._NAME_VALIDATION_EXPR.match(name):
             raise Exception("'{}' is not a valid plugin name.".format(name))
@@ -95,6 +104,7 @@ class Plugin(ABC):
         self.version_introduced             = version_introduced
         self.description                    = description
         self.resolution_description         = resolution_description
+        self.rationale                      = rationale
 
     # ----------------------------------------------------------------------
     @abstractmethod
@@ -105,6 +115,101 @@ class Plugin(ABC):
         """Validates the provided configuration, returning messages that should be displayed to the caller"""
 
         raise Exception("Abstract method")  # pragma: no cover
+
+    # ----------------------------------------------------------------------
+    @extensionmethod
+    def CustomValidate(
+        self,
+        dm: DoneManager,
+        session: GitHubSession,
+        repository: str,
+    ) -> "Plugin.ValidateResultType":
+        """Perform complex validation via a session object."""
+
+        raise Exception("Abstract method")  # pragma: no cover
+
+    # ----------------------------------------------------------------------
+    def GenerateDisplayString(
+        self,
+        *,
+        include_header: bool=True,
+        resolution_repository: Optional[str]=None,  # resolution information will be provided if this value is not None
+        include_rationale: bool=True,
+    ) -> str:
+        components: list[str] = []
+
+        # Write the header last, as it will impact everything else that is written.
+
+        if resolution_repository:
+            components.append(
+                textwrap.dedent(
+                    """\
+                    ----------
+                    Resolution
+                    ----------
+                    {}
+
+                    """,
+                ).format(
+                    self.resolution_description.format(
+                        repository=resolution_repository,
+                    ).rstrip(),
+                ),
+            )
+
+        if include_rationale and self.rationale:
+            components.append(
+                textwrap.dedent(
+                    """\
+                    ---------
+                    Rationale
+                    ---------
+                    {}
+
+                    """,
+                ).format(
+                    self.rationale.rstrip(),
+                ),
+            )
+
+        components_str = "".join(components)
+
+        if not include_header:
+            return components_str
+
+        return textwrap.dedent(
+            """\
+            {name_underline}
+              {name}
+            {name_underline}
+
+                Configuration Type:  {configuration_type}
+                Version Introduced:  {version_introduced}
+
+                -----------
+                Description
+                -----------
+                {description}
+
+                {components}
+
+            """,
+        ).format(
+            name=self.name,
+            name_underline="=" * (len(self.name) + 4),
+            configuration_type=self.configuration_type.name,
+            version_introduced=self.version_introduced,
+            description=TextwrapEx.Indent(
+                self.description.rstrip(),
+                4,
+                skip_first_line=True,
+            ),
+            components=TextwrapEx.Indent(
+                components_str.rstrip(),
+                4,
+                skip_first_line=True,
+            ),
+        )
 
     # ----------------------------------------------------------------------
     # |

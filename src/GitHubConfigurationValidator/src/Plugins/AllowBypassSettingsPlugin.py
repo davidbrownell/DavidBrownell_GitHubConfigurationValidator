@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,23 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Do not allow bypassing the above settings",
     lambda configuration: configuration["enforce_admins"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to not allow administrators to bypass branch protection settings.
+
+            Reasons for this Default
+            ------------------------
+            - Ensure that all pull requests go through the same verification process.
+
+            Reasons to Override this Default
+            --------------------------------
+            - The steps invoked during the verification process...
+                * ...are unreliable.
+                * ...take an excessive amount of time to complete.
+
+            * Note that all of the reasons in this section are workarounds to address the underlying instability
+              of the steps invoked during the verification process. The ideal solution is to address the
+              underlying instability.
+        """,
+    ),
 )

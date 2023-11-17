@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,18 @@ Plugin = CreateEnablePlugin(
     "Pull Requests",
     "Allow squash merging",
     lambda configuration: configuration["allow_squash_merge"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to not allow squash merging.
+
+        Reasons for this Default
+        ------------------------
+        - Rebase merging is not compatible with signed commits, as GitHub creates a new commit when squashing.
+
+        Reasons to Override this Default
+        --------------------------------
+        - Your repository does not require signatures.
+        - You want to ensure that single-commit-changes are merged into the mainline branch to simplify the branch's history.
+        """,
+    ),
 )

@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any
 
 from semantic_version import Version as SemVer
@@ -45,4 +47,18 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Dismiss stale pull request approvals when new commits are pushed",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to dismiss stale pull request approvals when new commits are pushed.
+
+        Reasons for this Default
+        ------------------------
+        - Approvals apply to the changes as they existed when the approval was granted. The approval
+          may no longer be valid when new changes are pushed.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

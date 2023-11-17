@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Pull Requests",
     "Allow auto-merge",
     lambda configuration: configuration["allow_auto_merge"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to enable the option to auto-merge once all the required status checks associated with a pull request have passed.
+
+        Reasons for this Default
+        ------------------------
+        - Reduces mean resolution time by triggering the merge once all require status checks pass.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

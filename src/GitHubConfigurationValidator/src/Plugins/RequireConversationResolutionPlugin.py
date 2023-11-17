@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,18 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require conversation resolution before merging",
     lambda configuration: configuration["required_conversation_resolution"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require conversation resolution before merging a pull request.
+
+        Reasons for this Default
+        ------------------------
+        - Conversation resolution is an important part of the development process.
+        - Prevent the accidental merging of a pull request before changes associated with the comments have been made.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

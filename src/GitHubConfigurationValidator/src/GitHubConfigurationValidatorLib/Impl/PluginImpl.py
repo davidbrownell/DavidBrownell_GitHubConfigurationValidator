@@ -59,6 +59,7 @@ def CreateEnablePlugin(
     github_settings_value: Optional[str],
     get_configuration_value_func: Callable[[dict[str, Any]], PluginBase.ValidateResultType | bool],
     subject: Optional[str]=None,
+    rationale: Optional[str]=None,
 ) -> PythonType:
     """Creates a Plugin class for plugins that check if a value is enabled or disabled."""
 
@@ -119,6 +120,7 @@ def CreateEnablePlugin(
                     github_settings_value=github_settings_value,
                     checked_desc="checked" if enable_value else "unchecked",
                 ),
+                rationale,
             )
 
             self._enable_value              = enable_value
@@ -159,6 +161,7 @@ def CreateValuePlugin(
     github_settings_value: Optional[str],
     get_configuration_value_func: Callable[[dict[str, Any]], PluginBase.ValidateResultType | Result[Optional[CreateValuePluginT]]],
     subject: Optional[str]=None,
+    rationale: Optional[str]=None,
 ) -> PythonType:
     if github_settings_value is None:
         github_settings_value = "the value"
@@ -223,6 +226,7 @@ def CreateValuePlugin(
                 version_introduced,
                 "Validates that {} is set to '{}'.".format(subject, value),
                 resolution_instructions,
+                rationale,
             )
 
             self._expected_value            = value

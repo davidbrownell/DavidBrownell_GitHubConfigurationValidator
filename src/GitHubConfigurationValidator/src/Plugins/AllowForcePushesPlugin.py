@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,19 @@ Plugin = CreateEnablePlugin(
     "Rules applied to everyone including administrators",
     "Allow force pushes",
     lambda configuration: configuration["allow_force_pushes"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to not allow force pushes to the mainline branch.
+
+        Reasons for this Default
+        ------------------------
+        - Force pushes rewrite history, which break git lineage for all other clones of the repository.
+          Merges are possible when this happens, but they are difficult to perform and data loss is
+          possible.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

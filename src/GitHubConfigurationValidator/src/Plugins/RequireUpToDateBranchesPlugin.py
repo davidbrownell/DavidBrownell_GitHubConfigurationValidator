@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any
 
 from semantic_version import Version as SemVer
@@ -45,4 +47,19 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require status checks to pass before merging -> Require branches to be up to date before merging",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require branches to be up to date before merging. The terminology
+        used by GitHub is a bit confusing, as this setting ensure that all GitHub workflows triggered
+        by the pull request have completed successfully before the pull request can be merged.
+
+        Reasons for this Default
+        ------------------------
+        - Workflows run should pass before a pull request is merged into the mainline branch.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

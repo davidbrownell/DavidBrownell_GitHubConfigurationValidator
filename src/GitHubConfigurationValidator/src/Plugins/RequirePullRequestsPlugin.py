@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,18 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require a pull request before merging",
     lambda configuration: "required_pull_request_reviews" in configuration,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require pull requests before merging.
+
+        Reasons for this Default
+        ------------------------
+        - Pull requests are an important part of the development process and prevent unwanted changes from
+          making it into the mainline branch.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

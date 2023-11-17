@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -33,4 +35,9 @@ Plugin = CreateEnablePlugin(
     "Wikis",
     lambda configuration: configuration["has_wiki"],
     subject="Support for Wikis",
+    rationale=textwrap.dedent(
+        """\
+        No rationale for this default.
+        """,
+    ),
 )

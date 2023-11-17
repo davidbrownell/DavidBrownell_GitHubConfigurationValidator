@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Lock branch",
     lambda configuration: configuration["lock_branch"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to not lock the mainline branch.
+
+        Reasons for this Default
+        ------------------------
+        - Archiving a repository is a much more effective way to make it read-only.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
+        """,
+    ),
 )

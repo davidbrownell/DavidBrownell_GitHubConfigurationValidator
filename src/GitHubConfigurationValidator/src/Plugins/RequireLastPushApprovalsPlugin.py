@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any
 
 from semantic_version import Version as SemVer
@@ -45,4 +47,17 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require approval of the most recent reviewable push",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require approval of the most recent reviewable push by someone other than the author of the pull request.
+
+        Reasons for this Default
+        ------------------------
+        - Self-approval of a pull request eliminates the value provided by a second pair of eyes during a code review.
+
+        Reasons to Override this Default
+        --------------------------------
+        - You are the only person working on the repository.
+        """,
+    ),
 )

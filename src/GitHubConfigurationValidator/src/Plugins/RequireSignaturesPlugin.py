@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,18 @@ Plugin = CreateEnablePlugin(
     "Protect matching branches",
     "Require signed commits",
     lambda configuration: configuration["required_signatures"]["enabled"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require signed commits. Note that this setting does not work with
+        rebase merging or squash merging.
+
+        Reasons for this Default
+        ------------------------
+        - Ensure that the author of a commit is who the claim to be.
+
+        Reasons to Override this Default
+        --------------------------------
+        - You have enabled rebase merging or squash merging.
+        """,
+    ),
 )

@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any, Optional
 
 from semantic_version import Version as SemVer
@@ -44,4 +46,9 @@ Plugin = CreateValuePlugin(
     "Pull Requests",
     "Allow squash merging -> Default...",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        No rationale for this default.
+        """,
+    ),
 )

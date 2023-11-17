@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from typing import Any, Optional
 
 from semantic_version import Version as SemVer
@@ -45,4 +47,21 @@ Plugin = CreateValuePlugin(
     "Protect matching branches",
     "Require review from Code Owners",
     _GetValue,
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is to require at least one approval from a Code Owner.
+
+        Reasons for this Default
+        ------------------------
+        - Code Reviews are a generally accepted best practice for software development.
+        - The code is complex enough to require a review from a person knowledgeable about the code impacted by the pull request.
+
+        Reasons to Override this Default
+        --------------------------------
+        - You are the only person working on the repository (set the value to 0).
+        - You want to require more than one approval (set the value to the number of approvals required).
+        - You are not comfortable with the amount of time code reviews introduce in the development process (set the value to 0).
+        - Code can be reviewed by any member of the team (set the value to 0).
+        """,
+    ),
 )

@@ -15,6 +15,8 @@
 # ----------------------------------------------------------------------
 """Contains the Plugin object"""
 
+import textwrap
+
 from semantic_version import Version as SemVer
 
 from GitHubConfigurationValidatorLib.Plugin import Plugin as PluginBase
@@ -32,4 +34,17 @@ Plugin = CreateEnablePlugin(
     "General",
     "Template repository",
     lambda configuration: configuration["is_template"],
+    rationale=textwrap.dedent(
+        """\
+        The default behavior is that this is not a template repository.
+
+        Reasons for this Default
+        ------------------------
+        - Most repositories are not templates.
+
+        Reasons to Override this Default
+        --------------------------------
+        - Your repository is a template repository.
+        """,
+    ),
 )
