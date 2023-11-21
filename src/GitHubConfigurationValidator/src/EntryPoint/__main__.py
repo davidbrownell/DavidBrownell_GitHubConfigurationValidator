@@ -18,7 +18,10 @@
 import importlib
 import re
 import sys
+import textwrap
+import traceback
 
+from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from typing import Any, Callable, cast, Iterator, Optional, Pattern, Type as PythonType
@@ -132,6 +135,8 @@ def ListPlugins(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
         plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [], max_plugin_version)
+        if dm.result != 0:
+            return
 
         with dm.YieldStream() as stream:
             if not dm.is_verbose:
@@ -145,7 +150,16 @@ def ListPlugins(
                     ),
                 )
 
-                stream.write("\n")
+                stream.write(
+                    textwrap.dedent(
+                        """\
+
+
+                        Specify '--verbose' on the command line for additional information.
+
+                        """,
+                    ),
+                )
 
                 return
 
@@ -180,6 +194,8 @@ def PluginInfo(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
         plugins = _GetPlugins(ctx, dm, additional_plugin_dirs, [], [], None)
+        if dm.result != 0:
+            return
 
         plugin = next((plugin for plugin in plugins if plugin.name == plugin_name), None)
         if plugin is None:
@@ -267,18 +283,23 @@ def ValidateRepo(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
     ) as dm:
         with dm.Nested("Validating '{}'...".format(repository)) as validate_dm:
+            plugins = _GetPlugins(
+                ctx,
+                validate_dm,
+                additional_plugin_dirs,
+                include_plugins,
+                exclude_plugins,
+                max_plugin_version,
+            )
+
+            if validate_dm.result != 0:
+                return
+
             _ValidateRepo(
                 validate_dm,
                 GitHubSession(github_url, username, pat),
                 repository,
-                _GetPlugins(
-                    ctx,
-                    validate_dm,
-                    additional_plugin_dirs,
-                    include_plugins,
-                    exclude_plugins,
-                    max_plugin_version,
-                ),
+                plugins,
                 with_rationale=with_rationale,
             )
 
@@ -327,6 +348,9 @@ def ValidateRepos(
             max_plugin_version,
         )
 
+        if dm.result != 0:
+            return
+
         session = GitHubSession(github_url, username, pat)
 
         repositories = _GetRepos(
@@ -341,17 +365,23 @@ def ValidateRepos(
             return
 
         # ----------------------------------------------------------------------
+        @dataclass
+        class ExecuteResult(object):
+            returncode: int
+            output: str
+
+        # ----------------------------------------------------------------------
         def Execute(
             context: str,
             on_simple_status_func: Callable[[str], None],  # pylint: disable=unused-argument
-        ) -> ExecuteTasks.TransformTypes.FuncType[Optional[str]]:
+        ) -> ExecuteTasks.TransformTypes.FuncType[Optional[ExecuteResult]]:
             repository = context
             del context
 
             # ----------------------------------------------------------------------
             def Impl(
                 status: ExecuteTasks.Status,  # pylint: disable=unused-argument
-            ) -> Optional[str]:
+            ) -> Optional[ExecuteResult]:
                 sink = StringIO()
 
                 Capabilities.Set(sink, dm.capabilities)
@@ -370,7 +400,7 @@ def ValidateRepos(
                     )
 
                 if this_dm.result != 0:
-                    return sink.getvalue()
+                    return ExecuteResult(this_dm.result, sink.getvalue())
 
                 return None
 
@@ -393,11 +423,19 @@ def ValidateRepos(
         dm.WriteLine("")
 
         for result in results:
-            if result is not None:
-                dm.WriteLine(cast(str, result))
-                dm.WriteLine("")
+            if result is None:
+                continue
 
-                dm.result = -1
+            result = cast(ExecuteResult, result)
+
+            dm.WriteLine(result.output)
+            dm.WriteLine("")
+
+            if (
+                result.returncode < 0
+                or (result.returncode > 0 and dm.result >= 0)
+            ):
+                dm.result = result.returncode
 
 
 # ----------------------------------------------------------------------
@@ -492,7 +530,28 @@ def _GetPlugins(
                         if filename.stem == "Plugin":
                             continue
 
-                        mod = importlib.import_module(filename.stem)
+                        try:
+                            mod = importlib.import_module(filename.stem)
+                        except:
+                            dir_dm.WriteWarning(
+                                textwrap.dedent(
+                                    """\
+                                    An error was encountered when importing '{}'.
+
+                                        {}
+
+                                    """,
+                                ).format(
+                                    filename,
+                                    TextwrapEx.Indent(
+                                        traceback.format_exc().rstrip(),
+                                        4,
+                                        skip_first_line=True,
+                                    ),
+                                ),
+                            )
+
+                            continue
 
                         found_plugin = False
 
@@ -535,6 +594,10 @@ def _GetPlugins(
 
                         if not found_plugin:
                             dir_dm.WriteInfo("A plugin class was not found in '{}'.\n".format(filename))
+
+        if load_dm.result != 0:
+            load_dm.WriteError("Errors were encountered while loading plugins.\n")
+            return []
 
         if custom_parameter_types:
             arguments = ProcessDynamicArgs(ctx, custom_parameter_types)
@@ -727,6 +790,7 @@ def _ValidateRepo(
                         "\n{}".format(
                             plugin.GenerateDisplayString(
                                 include_header=False,
+                                include_parameters=False,
                                 resolution_repository=repository_url,
                                 include_rationale=with_rationale,
                             ),
@@ -826,7 +890,10 @@ def _ValidateRepo(
     if custom_plugins:
         with dm.Nested("Running {}...".format(inflect.no("custom plugin", len(custom_plugins)))) as custom_dm:
             for plugin in custom_plugins:
-                with custom_dm.Nested("Running '{}'...".format(plugin.name)) as plugin_dm:
+                with custom_dm.Nested(
+                    "Running '{}'...".format(plugin.name),
+                    suffix="\n",
+                ) as plugin_dm:
                     DisplayResults(
                         plugin_dm,
                         plugin,

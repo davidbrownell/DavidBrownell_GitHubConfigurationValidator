@@ -141,6 +141,7 @@ setup(
             "no_compress": False,
             "optimize": 0,
             "packages": [
+                "dateutil",
                 "semantic_version",
             ],
             "include_files": include_files,
