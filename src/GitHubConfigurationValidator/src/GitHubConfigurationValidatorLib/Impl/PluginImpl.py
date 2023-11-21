@@ -80,7 +80,6 @@ def CreateEnablePlugin(
         @classmethod
         @overridemethod
         def GetInstantiationParameters(cls) -> TypeDefinitionsType:
-
             return {
                 instantiation_parameter_name: (
                     bool,

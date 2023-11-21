@@ -19,8 +19,9 @@ import re
 import textwrap
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Optional, Union
+from typing import Any, Optional, Type as PythonType, Union
 
 from semantic_version import Version as SemVer
 
@@ -28,7 +29,7 @@ from Common_Foundation.Streams.DoneManager import DoneManager
 from Common_Foundation import TextwrapEx
 from Common_Foundation.Types import extensionmethod
 
-from Common_FoundationEx.TyperEx import TypeDefinitionsType
+from Common_FoundationEx.TyperEx import typer, TypeDefinitionItem, TypeDefinitionsType
 
 from GitHubConfigurationValidatorLib.GitHubSession import GitHubSession
 
@@ -133,12 +134,83 @@ class Plugin(ABC):
         self,
         *,
         include_header: bool=True,
+        include_parameters: bool=True,
         resolution_repository: Optional[str]=None,  # resolution information will be provided if this value is not None
         include_rationale: bool=True,
     ) -> str:
         components: list[str] = []
 
         # Write the header last, as it will impact everything else that is written.
+
+        if include_parameters:
+            # ----------------------------------------------------------------------
+            @dataclass
+            class TyperInfo(object):
+                command_line_arg: str
+                description: str
+
+            # ----------------------------------------------------------------------
+            def GetTyperInfo(
+                typer_info: typer.models.OptionInfo,
+            ) -> TyperInfo:
+                return TyperInfo(
+                    typer_info.param_decls[0],
+                    typer_info.help,
+                )
+
+            # ----------------------------------------------------------------------
+
+            parameters = self.__class__.GetInstantiationParameters()
+            if parameters:
+                items: dict[str, str] = {}
+
+                for type_definition_type in parameters.values():
+                    python_type: Optional[PythonType] = None
+                    typer_info: Optional[TyperInfo] = None
+
+                    if isinstance(type_definition_type, TypeDefinitionItem):
+                        python_type = type_definition_type.python_type
+                        typer_info = GetTyperInfo(type_definition_type.option_info)
+
+                    elif (
+                        isinstance(type_definition_type, tuple)
+                        and len(type_definition_type) == 2
+                        and isinstance(type_definition_type[0], PythonType)
+                        and isinstance(type_definition_type[1], typer.models.OptionInfo)
+                    ):
+                        python_type = type_definition_type[0]
+                        typer_info = GetTyperInfo(type_definition_type[1])
+
+                    else:
+                        assert False, type_definition_type
+
+                    assert python_type is not None
+                    assert typer_info is not None
+
+                    if python_type is bool:
+                        items[typer_info.command_line_arg] = typer_info.description
+                    else:
+                        items["{} <{}>".format(
+                            typer_info.command_line_arg,
+                            python_type.__name__,
+                        )] = typer_info.description
+
+                max_item_length = max(len(k) for k in items.keys())
+                item_template = "{{:<{}}}: {{}}".format(int(max_item_length * 1.2))
+
+                components.append(
+                    textwrap.dedent(
+                        """\
+                        -------------------------
+                        Command Line Parameter(s)
+                        -------------------------
+                        {}
+
+                        """,
+                    ).format(
+                        "\n".join(item_template.format(k, v) for k, v in items.items())
+                    ),
+                )
 
         if resolution_repository:
             components.append(
