@@ -40,7 +40,7 @@ Plugin = CreateValuePlugin(
     "MergeCommitMessage",
     PluginBase.ConfigurationType.Repository,
     SemVer("0.1.0"),
-    "PR_BODY",
+    "BLANK",
     "--merge-commit-message",
     "settings",
     "Pull Requests",
@@ -48,7 +48,28 @@ Plugin = CreateValuePlugin(
     _GetValue,
     rationale=textwrap.dedent(
         """\
-        No rationale for this default.
+        Available values:
+
+            PR_TITLE [Default message]
+                Pull Request number and head branch on the first line; pull request title on the third line
+
+            BLANK [Default to pull request title]
+                Pull Request title and number on the first line.
+
+            PR_BODY [Default to pull request title and description]
+                Pull Request title and number on the first line; pull request description starting on the third line.
+
+        The default setting is BLANK.
+
+        Reasons for this Default
+        ------------------------
+        - Reduce redundant information by only duplicating the title of the commit(s).
+        - PR_TITLE includes the head branch name, which oftentimes is not relevant information to preserve over time.
+        - PR_BODY duplicates the title and description of the commit(s).
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
         """,
     ),
 )

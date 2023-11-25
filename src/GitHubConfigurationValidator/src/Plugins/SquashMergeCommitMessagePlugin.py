@@ -40,7 +40,7 @@ Plugin = CreateValuePlugin(
     "SquashMergeCommitMessage",
     PluginBase.ConfigurationType.Repository,
     SemVer("0.1.0"),
-    "PR_BODY",
+    "COMMIT_MESSAGES",
     "--squash-merge-commit-message",
     "settings",
     "Pull Requests",
@@ -48,7 +48,28 @@ Plugin = CreateValuePlugin(
     _GetValue,
     rationale=textwrap.dedent(
         """\
-        No rationale for this default.
+        Available values:
+
+            BLANK [Default to pull request title]
+                Pull Request title and number on the first line.
+
+            COMMIT_MESSAGES [Default to pull request title and commit details]
+                Commit title and...
+                    [Single Commit] ...commit message
+                    [Multiple Commits] ...pull request title and number and list of commits
+
+            PR_BODY [Default to pull request title and description]
+                Pull Request title and number on the first line; commit description starting on the third line.
+
+        The default setting is COMMIT_MESSAGES.
+
+        Reasons for this Default
+        ------------------------
+        - Preserves the information in the original commits.
+
+        Reasons to Override this Default
+        --------------------------------
+        <unknown>
         """,
     ),
 )
