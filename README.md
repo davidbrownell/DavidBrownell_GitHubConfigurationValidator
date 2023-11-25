@@ -27,6 +27,14 @@ There are a number of different ways to use this tool:
 
 1) `docker run -it --rm -v "<directory containing PAT file>:/local" dbrownell/github_configuration_validator:latest <arguments here> --pat /local/<name of PAT file>`
 
+#### Running on Apple Silicon
+
+The docker image uses `amd64` binaries. To run this image on a Mac with M1, M2, ... hardware include the argument `--platform linux/amd64` to the docker command lines above.
+
+For example:
+
+`docker run -it --rm --platform linux/amd64 dbrownell/github_configuration_validator:latest <arguments here>`
+
 ### B) Binary
 
 1) Download a released archive [here](https://github.com/davidbrownell/DavidBrownell_GitHubConfigurationValidator/releases).
