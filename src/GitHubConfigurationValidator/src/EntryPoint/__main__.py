@@ -109,7 +109,7 @@ _include_repos_option                       = typer.Option(None, "--include-repo
 _exclude_repos_option                       = typer.Option(None, "--exclude-repo", help="Regular expression matching GitHub repository names that should not be processed.")
 _include_plugins_option                     = typer.Option(None, "--include-plugin", help="Regular expression matching plugin names that should be applied.")
 _exclude_plugins_option                     = typer.Option(None, "--exclude-plugin", help="Regular expression matching plugin names that should not be applied.")
-_with_rationale_option                      = typer.Option(None, "--with-rationale", help="Include plugin rationale in the output.")
+_with_rationale_option                      = typer.Option(None, "--rationale", help="Include plugin rationale in the output.")
 
 
 # ----------------------------------------------------------------------
