@@ -532,7 +532,7 @@ def _GetPlugins(
 
                         try:
                             mod = importlib.import_module(filename.stem)
-                        except:
+                        except:  # pylint: disable=bare-except
                             dir_dm.WriteWarning(
                                 textwrap.dedent(
                                     """\
@@ -825,19 +825,6 @@ def _ValidateRepo(
 
             if plugins:
                 with run_dm.Nested("Running {}...".format(inflect.no("plugin", len(plugins)))) as plugin_dm:
-                    # Create the repository url to include with errors
-                    repository_url = session.github_url
-
-                    if repository_url == "https://api.github.com":
-                        repository_url = "https://github.com"
-                    elif repository_url.endswith("/api/v3"):
-                        repository_url = repository_url[:-len("/api/v3")]
-
-                    repository_url += "/{}/{}".format(
-                        session.github_username,
-                        repository,
-                    )
-
                     # Process the plugins
                     for plugin in plugins:
                         try:
