@@ -1,0 +1,5 @@
+require-approvals: 0
+require-code-owner-reviews: 0
+
+# A value of 0 must be provided to indicate that the flag should be processed.
+no-require-last-push-approvals: 0

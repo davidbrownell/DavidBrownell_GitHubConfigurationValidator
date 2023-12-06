@@ -76,20 +76,20 @@ else:
 # ----------------------------------------------------------------------
 include_files: list[tuple[str, str]] = []
 
-for child in Path("src/Plugins").iterdir():
-    if (
-        not child.is_file()
-        or child.suffix != ".py"
-        or child.stem == "__init__"
-    ):
-        continue
+for include_path, is_supported_file_func in [
+    (Path("src/Plugins"), lambda filename: filename.suffix == ".py" and filename.stem != "__init__"),
+    (Path("src/Configs"), lambda filename: True),
+]:
+    for child in include_path.iterdir():
+        if not (child.is_file() and is_supported_file_func(child)):
+            continue
 
-    include_files.append(
-        (
-            str(child),
-            str(Path(*child.parts[1:])),
-        ),
-    )
+        include_files.append(
+            (
+                str(child),
+                str(Path(*child.parts[1:])),
+            ),
+        )
 
 for root_str, directories, filenames in os.walk(Path("src/GitHubConfigurationValidatorLib")):
     root = Path(root_str)
