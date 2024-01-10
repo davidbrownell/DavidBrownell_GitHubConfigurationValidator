@@ -328,6 +328,7 @@ def ValidateRepos(
     max_plugin_version=_max_plugin_version_option,
     additional_plugin_dirs: list[Path]=_additional_plugin_dirs_option,
     with_rationale: bool=_with_rationale_option,
+    ignore_warnings_in_repo_param: list[str]=typer.Option(None, "--ignore-warnings-in-repo", help="Ignore warnings in the specified repository."),
     verbose: bool=typer.Option(False, "--verbose", help="Write verbose information to the terminal."),
     debug: bool=typer.Option(False, "--debug", help="Write debug information to the terminal."),
 ) -> None:
@@ -335,6 +336,8 @@ def ValidateRepos(
 
     if with_rationale and not verbose:
         verbose = True
+
+    ignore_warnings_in_repo = set(ignore_warnings_in_repo_param)
 
     with DoneManager.CreateCommandLine(
         output_flags=DoneManagerFlags.Create(verbose=verbose, debug=debug),
@@ -399,7 +402,12 @@ def ValidateRepos(
                         with_rationale=with_rationale,
                     )
 
-                if this_dm.result != 0:
+                    original_result = this_dm.result
+
+                    if this_dm.result > 0 and repository in ignore_warnings_in_repo:
+                        this_dm.result = 0
+
+                if original_result != 0:
                     return ExecuteResult(this_dm.result, sink.getvalue())
 
                 return None
