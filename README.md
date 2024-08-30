@@ -1,5 +1,7 @@
 # GitHubConfigurationValidator
 
+==Note that this repository has been deprecated in favor of [gt-sse-center/RepoAuditor](https://github.com/gt-sse-center/RepoAuditor). Please use that repository instead of this one.==
+
 Command line tool that validates configuration settings for one or more GitHub repositories. Validation plugins can be used to customize the rules enforced by the tool.
 
 ## Features
